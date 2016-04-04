@@ -6,8 +6,34 @@ var app = express();
 var archive = archiver("zip");
 var port = 8080;
 
+
+function readURL(url,callback){
+	var data = "";
+	var protocol = url.split("://")[0];
+
+	var request = require(protocol).get(url,function(res){
+		res.on('data',function(chunk){
+			data += chunk;
+		});
+
+		res.on('end',function(){
+			callback(data);
+		});
+	});
+}
+
 app.get('/',function(req,res){
 	res.redirect('/index.html');
+});
+
+app.get('/getPhotos',function(req,res){
+	var accessToken = req.query.access_token;
+	var url = "https://graph.facebook.com/v2.5/me/albums?fields=name,id&access_token=" + accessToken;
+
+	readURL(url,function(data){
+		console.log(data);
+		res.send(data);
+	});
 });
 
 app.get('/download',function(req,res){
