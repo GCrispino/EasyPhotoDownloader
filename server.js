@@ -22,22 +22,37 @@ function readURL(url,callback){
 	});
 }
 
+function downloadAlbum(album){
+	/*downloads all pictures from an album and
+	* saves them in a specific folder */
+
+}
+function downloadAlbums(albums){
+	//function that downloads all pictures from all albums
+	for (var album of albums){
+		downloadAlbum(album);
+	}
+}
+
 app.get('/',function(req,res){
 	res.redirect('/index.html');
 });
 
 app.get('/getPhotos',function(req,res){
+	//route made to get all the user's photos and disponibilize it to download
 	var accessToken = req.query.access_token;
 	var url = "https://graph.facebook.com/v2.5/me/albums?fields=name,id&access_token=" + accessToken;
 
 	readURL(url,function(data){
-		console.log(data);
-		res.send(data);
+		//array that stores data for all the user's albums
+		var albums = JSON.parse(data).data;
+		downloadAlbums(albums);
+		res.end();
 	});
 });
 
 app.get('/download',function(req,res){
-	var output = fs.createWriteStream(__dirname + '/public/zip/test.zip');
+	var output = fs.createWriteStream(__dirname + '/public/zip/photos.zip');
 
 	archive.pipe(output);
 	archive.bulk([{expand: true,cwd: './public/',src:['*.*']}]);
@@ -45,7 +60,7 @@ app.get('/download',function(req,res){
 
 	//sets event listener to send file when the writing is over
 	output.on("close",function(){
-		res.download(__dirname + '/public/zip/test.zip',function(err){
+		res.download(__dirname + '/public/zip/photos.zip',function(err){
 			if (err){
 				console.log("No such file or directory!");
 				res.send("0");
