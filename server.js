@@ -31,8 +31,16 @@ function readURLtoFile(url,writableStream,callback){
 	var protocol = url.split("://")[0];
 
 	var request = require(protocol).get(url,function(res){
+		console.log("Writing to file on path: " + writableStream.path);
 		res.on('data',function(chunk){
+			// console.log("writing stuff...");
 			writableStream.write(chunk);
+		});
+
+		res.on('end',function(){
+			writableStream.end();
+			console.log("Finished writing to file on path: " + writableStream.path);
+			callback();
 		});
 
 		request.on('error', function(e) {
@@ -45,13 +53,37 @@ function downloadPhoto(albumName,photo,accessToken) {
 	/*download photo to file system using a photo object retrieved
 	 *from an API call*/
 
-	var photoName = photo.name;
+	var photoName;
 	var photoURL = photo.images[0].source;
-	var outputFile = fs.createWriteStream(__dirname + '/photos/' + albumName
-		+ '/' + '.jpg');
+	var outputFile;
 
+	if (photo.name == undefined || photo.name.length > 20)
+		photoName = albumName + Math.ceil(Math.random() * 200);
+	else
+		photoName = photo.name;
+
+	try {
+		//checks if directory exists
+		fs.accessSync(__dirname + '/photos/' + albumName);
+	} catch (e) {
+		//if it doesn't exist, it gets created
+		fs.mkdirSync(__dirname + '/photos/' + albumName);
+	}
+
+	outputFile = fs.createWriteStream(__dirname + '/photos/' + albumName
+		+ '/' + photoName + '.jpg');
+
+	outputFile.on("error",function(){
+		//I HAVE TO FIGURE OUT WHY THOSE ERRORS HAPPEN
+		photoName = albumName + Math.ceil(Math.random() * 200);
+		outputFile = fs.createWriteStream(__dirname + '/photos/' + albumName
+			+ '/' + photoName + '.jpg');
+	});
+
+	//loads data into file
 	readURLtoFile(photoURL,outputFile,function(errMessage){
-		console.log("Error message: " + errMessage);
+		if (errMessage)
+			console.log("Error message: " + errMessage);
 	});
 }
 
