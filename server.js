@@ -19,19 +19,62 @@ function readURL(url,callback){
 		res.on('end',function(){
 			callback(data);
 		});
+
+		request.on('error', function(e) {
+		    console.log("Got error: " + e.message);
+		});
 	});
 }
 
-function downloadAlbum(album){
+function readURLtoFile(url,writableStream,callback){
+	//reads an URL and writes the received data into the 'writableStream' variable
+	var protocol = url.split("://")[0];
+
+	var request = require(protocol).get(url,function(res){
+		res.on('data',function(chunk){
+			writableStream.write(chunk);
+		});
+
+		request.on('error', function(e) {
+			callback(e.message);
+		});
+	});
+}
+
+function downloadPhoto(albumName,photo,accessToken) {
+	/*download photo to file system using a photo object retrieved
+	 *from an API call*/
+
+	var photoName = photo.name;
+	var photoURL = photo.images[0].source;
+	var outputFile = fs.createWriteStream(__dirname + '/photos/' + albumName
+		+ '/' + '.jpg');
+
+	readURLtoFile(photoURL,outputFile,function(errMessage){
+		console.log("Error message: " + errMessage);
+	});
+}
+
+function downloadAlbum(album,accessToken){
 	/*downloads all pictures from an album and
 	* saves them in a specific folder */
+	var albumId = album.id;
+	var albumName = album.name;
+	var url = "https://graph.facebook.com/v2.5/" + albumId
+		+ "/photos?fields=name,images&access_token=" + accessToken;
 
+	readURL(url,function(data){
+		//gets information for all photos
+		var photos = JSON.parse(data).data;
+
+		for (photo of photos)
+			downloadPhoto(albumName,photo,accessToken);
+	});
 }
-function downloadAlbums(albums){
+function downloadAlbums(albums,accessToken){
 	//function that downloads all pictures from all albums
-	for (var album of albums){
-		downloadAlbum(album);
-	}
+	for (var album of albums)
+		downloadAlbum(album,accessToken);
 }
 
 app.get('/',function(req,res){
@@ -46,7 +89,7 @@ app.get('/getPhotos',function(req,res){
 	readURL(url,function(data){
 		//array that stores data for all the user's albums
 		var albums = JSON.parse(data).data;
-		downloadAlbums(albums);
+		downloadAlbums(albums,accessToken);
 		res.end();
 	});
 });
