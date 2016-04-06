@@ -49,7 +49,7 @@ function readURLtoFile(url,writableStream,callback){
 	});
 }
 
-function downloadPhoto(albumName,photo,accessToken) {
+function downloadPhoto(albumName,photo,accessToken,callback) {
 	/*download photo to file system using a photo object retrieved
 	 *from an API call*/
 
@@ -57,6 +57,7 @@ function downloadPhoto(albumName,photo,accessToken) {
 	var photoURL = photo.images[0].source;
 	var outputFile;
 
+	//gets the filename
 	if (photo.name == undefined || photo.name.length > 20)
 		photoName = albumName + Math.ceil(Math.random() * 200);
 	else
@@ -82,12 +83,14 @@ function downloadPhoto(albumName,photo,accessToken) {
 
 	//loads data into file
 	readURLtoFile(photoURL,outputFile,function(errMessage){
-		if (errMessage)
-			console.log("Error message: " + errMessage);
+		callback(errMessage);
+
+		// if (errMessage)
+			// console.log("Error message: " + errMessage);
 	});
 }
 
-function downloadAlbum(album,accessToken){
+function downloadAlbum(album,accessToken,callback){
 	/*downloads all pictures from an album and
 	* saves them in a specific folder */
 	var albumId = album.id;
@@ -99,14 +102,35 @@ function downloadAlbum(album,accessToken){
 		//gets information for all photos
 		var photos = JSON.parse(data).data;
 
-		for (photo of photos)
-			downloadPhoto(albumName,photo,accessToken);
+		function iterator(i){
+			/*iterates through the list of album's photos
+			 *it has to use recursion because of the asynchronous
+			 *nature of the functions that do this job*/
+
+			if (i < photos.length)
+				downloadPhoto(albumName,photos[i],accessToken,function(errMessage){
+					console.log("on photo " + i);
+					if (errMessage)
+						console.log("Error!");
+					else
+						iterator(i + 1);
+				});
+			else 
+				callback();
+		}
+
+		//the function is called here
+		iterator(0);
+		// for (photo of photos)
+			// downloadPhoto(albumName,photo,accessToken);
 	});
 }
-function downloadAlbums(albums,accessToken){
+function downloadAlbums(albums,accessToken,callback){
 	//function that downloads all pictures from all albums
-	for (var album of albums)
+
+	for (var album of albums){
 		downloadAlbum(album,accessToken);
+	}
 }
 
 app.get('/',function(req,res){
@@ -121,7 +145,12 @@ app.get('/getPhotos',function(req,res){
 	readURL(url,function(data){
 		//array that stores data for all the user's albums
 		var albums = JSON.parse(data).data;
-		downloadAlbums(albums,accessToken);
+		// downloadAlbums(albums,accessToken,function(){
+		//
+		// });
+		downloadAlbum(albums[0],accessToken,function(){
+			console.log("after download albums");
+		});
 		res.end();
 	});
 });
