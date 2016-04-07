@@ -19,13 +19,14 @@ function iterate(array,func,args,callback){
 	*/
 
 	(function iterator(i){
-		if (i < array.length)
+		if (i < array.length){
 			func.apply(this,[array[i]].concat(args).concat(function(errMessage){
 				if (errMessage)
 					console.log("Error: " + errMessage);
 				else
 					iterator(i + 1);
 			}));
+		}
 		else
 			callback();
 	})(0);
@@ -123,20 +124,34 @@ function downloadAlbum(album,accessToken,callback){
 	var url = "https://graph.facebook.com/v2.5/" + albumId
 		+ "/photos?fields=name,images&access_token=" + accessToken;
 
-	readURL(url,function(data){
-		//gets information for all photos
-		var photos = JSON.parse(data).data;
-		var paging = JSON.parse(data).paging;
-		var next;
-		
-		if (paging)
-			if (paging.next)
-				next = JSON.parse(data).paging.next;
+	var photos;
 
-		iterate(photos,downloadPhoto,[albumName,accessToken],callback);
+	console.log("Downloading album " + albumName);
 
-	});
+	(function getAllPhotos(url){
+		/*Closure that gets all album's photos' data
+		 *before actually downloading it*/
+		readURL(url,function(data){
+			var newData = JSON.parse(data);
+
+			if (photos)
+				photos = photos.concat(newData.data);
+			else
+				photos = newData.data;
+
+			if (newData.paging && newData.paging.next){
+				url = newData.paging.next;
+                getAllPhotos(url);
+			}
+			else {
+				//when all photos' information is get, then the downloading process starts
+				iterate(photos,downloadPhoto,[albumName,accessToken],callback);
+			}
+
+		})
+	})(url);
 }
+
 function downloadAlbums(albums,accessToken,callback){
 	//function that downloads all pictures from all albums
 	iterate(albums,downloadAlbum,[accessToken],callback);
