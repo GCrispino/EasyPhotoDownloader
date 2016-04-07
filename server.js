@@ -6,6 +6,31 @@ var app = express();
 var archive = archiver("zip");
 var port = 8080;
 
+function iterate(array,func,args,callback){
+	/*iterates through an array executing a asynchronous function to each
+	 *element in a synchronous way, using a closure and recursion
+	 *
+	 *PARAMETERS:
+	 *'array': array to be iterated through
+	 *'func': function that will be executed on each iteration
+	 *'args': arguments passed to function 'func', along with a
+	 	callback function
+	 * 'callback': callback function that is called at the end of the iteration
+	*/
+
+	(function iterator(i){
+		if (i < array.length)
+			func.apply(this,[array[i]].concat(args).concat(function(errMessage){
+				if (errMessage)
+					console.log("Error: " + errMessage);
+				else
+					iterator(i + 1);
+			}));
+		else
+			callback();
+	})(0);
+
+}
 
 function readURL(url,callback){
 	var data = "";
@@ -49,7 +74,7 @@ function readURLtoFile(url,writableStream,callback){
 	});
 }
 
-function downloadPhoto(albumName,photo,accessToken,callback) {
+function downloadPhoto(photo,albumName,accessToken,callback) {
 	/*download photo to file system using a photo object retrieved
 	 *from an API call*/
 
@@ -83,10 +108,10 @@ function downloadPhoto(albumName,photo,accessToken,callback) {
 
 	//loads data into file
 	readURLtoFile(photoURL,outputFile,function(errMessage){
-		callback(errMessage);
-
-		// if (errMessage)
-			// console.log("Error message: " + errMessage);
+		if (errMessage)
+			console.log("Error: " + errMessage);
+		else
+			callback(errMessage);
 	});
 }
 
@@ -101,36 +126,20 @@ function downloadAlbum(album,accessToken,callback){
 	readURL(url,function(data){
 		//gets information for all photos
 		var photos = JSON.parse(data).data;
+		var paging = JSON.parse(data).paging;
+		var next;
+		
+		if (paging)
+			if (paging.next)
+				next = JSON.parse(data).paging.next;
 
-		function iterator(i){
-			/*iterates through the list of album's photos
-			 *it has to use recursion because of the asynchronous
-			 *nature of the functions that do this job*/
+		iterate(photos,downloadPhoto,[albumName,accessToken],callback);
 
-			if (i < photos.length)
-				downloadPhoto(albumName,photos[i],accessToken,function(errMessage){
-					console.log("on photo " + i);
-					if (errMessage)
-						console.log("Error!");
-					else
-						iterator(i + 1);
-				});
-			else 
-				callback();
-		}
-
-		//the function is called here
-		iterator(0);
-		// for (photo of photos)
-			// downloadPhoto(albumName,photo,accessToken);
 	});
 }
 function downloadAlbums(albums,accessToken,callback){
 	//function that downloads all pictures from all albums
-
-	for (var album of albums){
-		downloadAlbum(album,accessToken);
-	}
+	iterate(albums,downloadAlbum,[accessToken],callback);
 }
 
 app.get('/',function(req,res){
@@ -144,14 +153,15 @@ app.get('/getPhotos',function(req,res){
 
 	readURL(url,function(data){
 		//array that stores data for all the user's albums
-		var albums = JSON.parse(data).data;
-		// downloadAlbums(albums,accessToken,function(){
-		//
-		// });
-		downloadAlbum(albums[0],accessToken,function(){
-			console.log("after download albums");
-		});
-		res.end();
+		if (JSON.parse(data).error) //if error on API call
+			console.log(JSON.parse(data).error.message);
+		else{
+			var albums = JSON.parse(data).data;
+			downloadAlbums(albums,accessToken,function(){
+				console.log("after download albums");
+			});
+			res.end();
+		}
 	});
 });
 
