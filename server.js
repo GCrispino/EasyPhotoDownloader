@@ -6,6 +6,21 @@ var app = express();
 var archive = archiver("zip");
 var port = 8080;
 
+
+function validateAlbumName(albumName) {
+	/*if the album name ends with a dot('.') or a space(" "),
+	*this character is removed.
+	*This is done because directories' names cannot end with these
+	*characters on the windows OS
+	*/
+	if (albumName.endsWith('.') || albumName.endsWith(' ')){
+		//removes the last character
+		return albumName.slice(0,albumName.length - 1);
+	}
+	else
+		return albumName;
+}
+
 function iterate(array,func,args,callback){
 	/*iterates through an array executing a asynchronous function to each
 	 *element in a synchronous way, using a closure and recursion
@@ -59,7 +74,6 @@ function readURLtoFile(url,writableStream,callback){
 	var request = require(protocol).get(url,function(res){
 		console.log("Writing to file on path: " + writableStream.path);
 		res.on('data',function(chunk){
-			// console.log("writing stuff...");
 			writableStream.write(chunk);
 		});
 
@@ -79,15 +93,18 @@ function downloadPhoto(photo,albumName,accessToken,callback) {
 	/*download photo to file system using a photo object retrieved
 	 *from an API call*/
 
-	var photoName;
+	var photoName = photo.name;
 	var photoURL = photo.images[0].source;
 	var outputFile;
 
 	//gets the filename
-	if (photo.name == undefined || photo.name.length > 20)
-		photoName = albumName + Math.ceil(Math.random() * 200);
-	else
-		photoName = photo.name;
+	// if (photo.name == undefined || photo.name.length > 20)
+	// 	photoName = albumName + Math.ceil(Math.random() * 200);
+	// else
+	// 	photoName = photo.name;
+
+	//album's name is validated
+	albumName = validateAlbumName(albumName);
 
 	try {
 		//checks if directory exists
@@ -97,6 +114,8 @@ function downloadPhoto(photo,albumName,accessToken,callback) {
 		fs.mkdirSync(__dirname + '/photos/' + albumName);
 	}
 
+	//write stream handling
+	//-------------------------------------------------------------------------
 	outputFile = fs.createWriteStream(__dirname + '/photos/' + albumName
 		+ '/' + photoName + '.jpg');
 
@@ -106,6 +125,7 @@ function downloadPhoto(photo,albumName,accessToken,callback) {
 		outputFile = fs.createWriteStream(__dirname + '/photos/' + albumName
 			+ '/' + photoName + '.jpg');
 	});
+	//-------------------------------------------------------------------------
 
 	//loads data into file
 	readURLtoFile(photoURL,outputFile,function(errMessage){
@@ -144,6 +164,10 @@ function downloadAlbum(album,accessToken,callback){
                 getAllPhotos(url);
 			}
 			else {
+				//updates photos' names as the album name plus an index
+				for (var i = 0; i < photos.length; i++)
+					photos[i].name = albumName + "_" + (i + 1);
+
 				//when all photos' information is get, then the downloading process starts
 				iterate(photos,downloadPhoto,[albumName,accessToken],callback);
 			}
@@ -173,6 +197,8 @@ app.get('/getPhotos',function(req,res){
 		else{
 			var albums = JSON.parse(data).data;
 			downloadAlbums(albums,accessToken,function(){
+				//downloadPhotosToClient();
+				//deleteData();
 				console.log("after download albums");
 			});
 			res.end();
