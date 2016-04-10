@@ -51,6 +51,44 @@ function iterate(array,func,args,callback){
 
 }
 
+function getAllData(url,callback){
+	/*This function gets all data of an API object by using the 'next' cursor
+	 * at the array 'array'
+	 *
+	 *PARAMETERS:
+	 *	url: the url that represents a Graph API call
+	 *	array: the array that will store all the data(for example: an 'albums'
+	 *		array of an user's albums)
+	 *	callback: the function that will be called once all the available
+	 *		informations are obtained.
+	*/
+	var array; //array that will contain the API data
+
+	(function getData(url){
+		/*Closure that gets all albums' data
+		 *before actually downloading it
+		 */
+		readURL(url,function(data){
+			var newData = JSON.parse(data);
+
+			if (array)
+				array = array.concat(newData.data);
+			else
+				array = newData.data;
+
+			if (newData.paging && newData.paging.next){
+				//if there is more data to get, the function is recursively called
+				url = newData.paging.next;
+                getData(url);
+			}
+			else
+				//if there is not more data to get, then the callback is called
+				callback(array);
+		});
+	})(url);
+
+}
+
 function readURL(url,callback){
 	var data = "";
 	var protocol = url.split("://")[0];
@@ -141,41 +179,56 @@ function downloadAlbum(album,accessToken,callback){
 	var url = "https://graph.facebook.com/v2.5/" + albumId
 		+ "/photos?fields=name,images&access_token=" + accessToken;
 
-	var photos;
-
 	console.log("Downloading album " + albumName);
 
-	(function getAllPhotos(url){
-		/*Closure that gets all album's photos' data
-		 *before actually downloading it*/
-		readURL(url,function(data){
-			var newData = JSON.parse(data);
+	getAllData(url,function(photos){
+		//updates photos' names as the album name plus an index
+		for (var i = 0; i < photos.length; i++)
+			photos[i].name = albumName + "_" + (i + 1);
 
-			if (photos)
-				photos = photos.concat(newData.data);
-			else
-				photos = newData.data;
-
-			if (newData.paging && newData.paging.next){
-				url = newData.paging.next;
-                getAllPhotos(url);
-			}
-			else {
-				//updates photos' names as the album name plus an index
-				for (var i = 0; i < photos.length; i++)
-					photos[i].name = albumName + "_" + (i + 1);
-
-				//when all photos' information is get, then the downloading process starts
-				iterate(photos,downloadPhoto,[albumName,accessToken],callback);
-			}
-
-		})
-	})(url);
+		//when all photos' information is get, then the downloading process starts
+		iterate(photos,downloadPhoto,[albumName,accessToken],callback);
+	});
 }
 
 function downloadAlbums(albums,accessToken,callback){
 	//function that downloads all pictures from all albums
 	iterate(albums,downloadAlbum,[accessToken],callback);
+}
+
+function downloadPhotosToClient(res,callback){
+	var output;
+
+	try {
+		//checks if directory exists
+		fs.accessSync(__dirname + '/zip');
+	} catch (e) {
+		//if it doesn't exist, it gets created
+		fs.mkdirSync(__dirname + '/zip');
+	}
+
+	output = fs.createWriteStream(__dirname + '/zip/photos.zip');
+
+	archive.pipe(output);
+	archive.bulk([{expand: true,cwd: __dirname + '/photos/',src:['*/*.*']}]);
+	archive.finalize();
+
+	//sets event listener to send file when the writing is over
+	output.on("close",function(){
+		res.download(__dirname + '/zip/photos.zip',function(err){
+			if (err){
+				console.log("No such file or directory!");
+				res.send("0");
+			}
+			else{
+				callback();
+			}
+		});
+	});
+}
+
+function deleteData() {
+
 }
 
 app.get('/',function(req,res){
@@ -187,27 +240,30 @@ app.get('/getPhotos',function(req,res){
 	var accessToken = req.query.access_token;
 	var url = "https://graph.facebook.com/v2.5/me/albums?fields=name,id&access_token=" + accessToken;
 
-	readURL(url,function(data){
-		//array that stores data for all the user's albums
-		if (JSON.parse(data).error) //if error on API call
-			console.log(JSON.parse(data).error.message);
-		else{
-			var albums = JSON.parse(data).data;
-			downloadAlbums(albums,accessToken,function(){
-				//downloadPhotosToClient();
+	console.log("On get photos!");
+
+	getAllData(url,function(albums) {
+
+		downloadAlbums(albums,accessToken,function(){
+			//downloadTimelinePhotos(accessToken,function(){});
+
+			console.log("after download albums");
+
+			downloadPhotosToClient(res,function() {
 				//deleteData();
-				console.log("after download albums");
+				console.log("After download");
 
-				//downloadTimelinePhotos(accessToken,function(){});
-
-				res.end();
 			});
-		}
+		});
+
 	});
+
 });
 
 app.get('/download',function(req,res){
-	var output = fs.createWriteStream(__dirname + '/public/zip/photos.zip');
+	var output;
+
+	output = fs.createWriteStream(__dirname + '/public/zip/photos.zip');
 
 	archive.pipe(output);
 	archive.bulk([{expand: true,cwd: './public/',src:['*.*']}]);
