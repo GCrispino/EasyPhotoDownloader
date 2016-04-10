@@ -15,7 +15,10 @@ function validateAlbumName(albumName) {
 	*/
 	if (albumName.endsWith('.') || albumName.endsWith(' ')){
 		//removes the last character
-		return albumName.slice(0,albumName.length - 1);
+		/*regex that matches any number or combination of dots and white spaces
+		 *at the end of the string
+		*/
+		return albumName.replace(/(\.*|\s*|(\.*\s*)*|(\s*\.*)*)$/,"");
 	}
 	else
 		return albumName;
@@ -96,12 +99,6 @@ function downloadPhoto(photo,albumName,accessToken,callback) {
 	var photoName = photo.name;
 	var photoURL = photo.images[0].source;
 	var outputFile;
-
-	//gets the filename
-	// if (photo.name == undefined || photo.name.length > 20)
-	// 	photoName = albumName + Math.ceil(Math.random() * 200);
-	// else
-	// 	photoName = photo.name;
 
 	//album's name is validated
 	albumName = validateAlbumName(albumName);
@@ -200,8 +197,11 @@ app.get('/getPhotos',function(req,res){
 				//downloadPhotosToClient();
 				//deleteData();
 				console.log("after download albums");
+
+				//downloadTimelinePhotos(accessToken,function(){});
+
+				res.end();
 			});
-			res.end();
 		}
 	});
 });
