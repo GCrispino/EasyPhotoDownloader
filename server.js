@@ -51,7 +51,7 @@ function iterate(array,func,args,callback){
 
 }
 
-function getAllData(url,callback){
+function getAllData(url){
 	/*This function gets all data of an API object by using the 'next' cursor
 	 * at the array 'array'
 	 *
@@ -64,28 +64,32 @@ function getAllData(url,callback){
 	*/
 	var array; //array that will contain the API data
 
-	(function getData(url){
-		/*Closure that gets all albums' data
-		 *before actually downloading it
-		 */
-		readURL(url,function(data){
-			var newData = JSON.parse(data);
+	return new Promise((resolve,reject) => {
+		(function getData(url){
+			/*Closure that gets all albums' data
+			 *before actually downloading it
+			 */
+			readURL(url,function(data){
+				var newData = JSON.parse(data);
 
-			if (array)
-				array = array.concat(newData.data);
-			else
-				array = newData.data;
+				if (array)
+					array = array.concat(newData.data);
+				else
+					array = newData.data;
 
-			if (newData.paging && newData.paging.next){
-				//if there is more data to get, the function is recursively called
-				url = newData.paging.next;
-                getData(url);
-			}
-			else
-				//if there is not more data to get, then the callback is called
-				callback(array);
-		});
-	})(url);
+				if (newData.paging && newData.paging.next){
+					//if there is more data to get, the function is recursively called
+					url = newData.paging.next;
+	                getData(url);
+				}
+				else
+					//if there is not more data to get, then it resolves
+					resolve(array);
+			});
+		})(url);
+	});
+
+	
 
 }
 
@@ -227,36 +231,47 @@ function downloadPhotosToClient(res,callback){
 	});
 }
 
-function deleteData() {
+function getAllPhotosFromAlbum(album,accessToken){
+	// return Promise.resolve([]);
 
+
+	return new Promise( (resolve,reject) => {
+		let albumId = album.id,
+			url = "https://graph.facebook.com/v2.5/" + albumId
+				+ "/photos?fields=name,images&access_token=" + accessToken;
+
+		getAllData(url)
+		.then( photos => {
+			album.photos = photos;
+			resolve(album);
+		})
+	});
+
+}
+
+function getAllPhotosFromAlbums(albums,accessToken){
+
+	return Promise.all(albums.map(album => getAllPhotosFromAlbum(album,accessToken)))
 }
 
 app.get('/',function(req,res){
 	res.redirect('/index.html');
 });
 
-app.get('/getPhotos',function(req,res){
-	//route made to get all the user's photos and disponibilize it to download
-	var accessToken = req.query.access_token;
-	var url = "https://graph.facebook.com/v2.5/me/albums?fields=name,id&access_token=" + accessToken;
+app.get('/getAlbums',function(req,res){
+	//route made to get all the user's albums and their photos and disponibilize it to download
+	let accessToken = req.query.access_token,
+		userID = req.query.userID,
+		url = "https://graph.facebook.com/v2.5/" + userID + 
+				"/albums?fields=name,id&access_token=" + accessToken;
 
-	console.log("On get photos!");
+	console.log("Retrieving user's albums...")
 
-	getAllData(url,function(albums) {
-
-		downloadAlbums(albums,accessToken,function(){
-			//downloadTimelinePhotos(accessToken,function(){});
-
-			console.log("after download albums");
-
-			downloadPhotosToClient(res,function() {
-				//deleteData();
-				console.log("After download");
-
-			});
-		});
-
-	});
+	//fetches all user albums' information
+	getAllData(url)
+	.then(albums => getAllPhotosFromAlbums(albums,accessToken))
+	.then(albumsWithPhotos => res.json(albumsWithPhotos))
+	.catch(error => res.status(400).json(error));
 
 });
 
@@ -285,3 +300,4 @@ app.use(express.static('public'));
 
 console.log("Listening to port " + port);
 app.listen(port);
+;
