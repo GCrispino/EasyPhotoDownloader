@@ -1,10 +1,9 @@
-var http = require('http');
-var express = require('express');
-var fs = require("fs");
-var archiver = require("archiver");
-var app = express();
-var archive = archiver("zip");
-var port = 8080;
+const express = require('express');
+const fs = require("fs");
+const download = require('./download');
+
+const app = express();
+const port = 8080;
 
 
 function validateAlbumName(albumName) {
@@ -62,15 +61,16 @@ function getAllData(url){
 	 *	callback: the function that will be called once all the available
 	 *		informations are obtained.
 	*/
-	var array; //array that will contain the API data
+	let array; //array that will contain the API data
 
 	return new Promise((resolve,reject) => {
 		(function getData(url){
 			/*Closure that gets all albums' data
 			 *before actually downloading it
 			 */
-			readURL(url,function(data){
-				var newData = JSON.parse(data);
+			download.readURL(url)
+			.then(data => {
+				let newData = JSON.parse(data);
 
 				if (array)
 					array = array.concat(newData.data);
@@ -85,53 +85,12 @@ function getAllData(url){
 				else
 					//if there is not more data to get, then it resolves
 					resolve(array);
-			});
+			})
 		})(url);
 	});
 
 	
 
-}
-
-function readURL(url,callback){
-	var data = "";
-	var protocol = url.split("://")[0];
-
-	var request = require(protocol).get(url,function(res){
-		res.on('data',function(chunk){
-			data += chunk;
-		});
-
-		res.on('end',function(){
-			callback(data);
-		});
-
-		request.on('error', function(e) {
-		    console.log("Got error: " + e.message);
-		});
-	});
-}
-
-function readURLtoFile(url,writableStream,callback){
-	//reads an URL and writes the received data into the 'writableStream' variable
-	var protocol = url.split("://")[0];
-
-	var request = require(protocol).get(url,function(res){
-		console.log("Writing to file on path: " + writableStream.path);
-		res.on('data',function(chunk){
-			writableStream.write(chunk);
-		});
-
-		res.on('end',function(){
-			writableStream.end();
-			console.log("Finished writing to file on path: " + writableStream.path);
-			callback();
-		});
-
-		request.on('error', function(e) {
-			callback(e.message);
-		});
-	});
 }
 
 function downloadPhoto(photo,albumName,accessToken,callback) {
@@ -167,12 +126,7 @@ function downloadPhoto(photo,albumName,accessToken,callback) {
 	//-------------------------------------------------------------------------
 
 	//loads data into file
-	readURLtoFile(photoURL,outputFile,function(errMessage){
-		if (errMessage)
-			console.log("Error: " + errMessage);
-		else
-			callback(errMessage);
-	});
+	return download.readURLtoFile(photoURL,outputFile);
 }
 
 function downloadAlbum(album,accessToken,callback){
@@ -213,9 +167,9 @@ function downloadPhotosToClient(res,callback){
 
 	output = fs.createWriteStream(__dirname + '/zip/photos.zip');
 
-	archive.pipe(output);
-	archive.bulk([{expand: true,cwd: __dirname + '/photos/',src:['*/*.*']}]);
-	archive.finalize();
+	// archive.pipe(output);
+	// archive.bulk([{expand: true,cwd: __dirname + '/photos/',src:['*/*.*']}]);
+	// archive.finalize();
 
 	//sets event listener to send file when the writing is over
 	output.on("close",function(){
@@ -232,8 +186,6 @@ function downloadPhotosToClient(res,callback){
 }
 
 function getAllPhotosFromAlbum(album,accessToken){
-	// return Promise.resolve([]);
-
 
 	return new Promise( (resolve,reject) => {
 		let albumId = album.id,
@@ -250,8 +202,7 @@ function getAllPhotosFromAlbum(album,accessToken){
 }
 
 function getAllPhotosFromAlbums(albums,accessToken){
-
-	return Promise.all(albums.map(album => getAllPhotosFromAlbum(album,accessToken)))
+	return Promise.all(albums.map(album => getAllPhotosFromAlbum(album,accessToken)));
 }
 
 app.get('/',function(req,res){
