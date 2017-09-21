@@ -1,27 +1,11 @@
 const express = require('express');
-const fs = require("fs");
+const fs = require('fs');
 const download = require('./download');
 
 const app = express();
 const port = 8080;
 
 
-function validateAlbumName(albumName) {
-	/*if the album name ends with a dot('.') or a space(" "),
-	*this character is removed.
-	*This is done because directories' names cannot end with these
-	*characters on the windows OS
-	*/
-	if (albumName.endsWith('.') || albumName.endsWith(' ')){
-		//removes the last character
-		/*regex that matches any number or combination of dots and white spaces
-		 *at the end of the string
-		*/
-		return albumName.replace(/(\.*|\s*|(\.*\s*)*|(\s*\.*)*)$/,"");
-	}
-	else
-		return albumName;
-}
 
 function iterate(array,func,args,callback){
 	/*iterates through an array executing a asynchronous function to each
@@ -39,7 +23,7 @@ function iterate(array,func,args,callback){
 		if (i < array.length){
 			func.apply(this,[array[i]].concat(args).concat(function(errMessage){
 				if (errMessage)
-					console.log("Error: " + errMessage);
+					console.log('Error: ' + errMessage);
 				else
 					iterator(i + 1);
 			}));
@@ -69,23 +53,23 @@ function getAllData(url){
 			 *before actually downloading it
 			 */
 			download.readURL(url)
-			.then(data => {
-				let newData = JSON.parse(data);
+				.then(data => {
+					let newData = JSON.parse(data);
 
-				if (array)
-					array = array.concat(newData.data);
-				else
-					array = newData.data;
+					if (array)
+						array = array.concat(newData.data);
+					else
+						array = newData.data;
 
-				if (newData.paging && newData.paging.next){
+					if (newData.paging && newData.paging.next){
 					//if there is more data to get, the function is recursively called
-					url = newData.paging.next;
+						url = newData.paging.next;
 	                getData(url);
-				}
-				else
+					}
+					else
 					//if there is not more data to get, then it resolves
-					resolve(array);
-			})
+						resolve(array);
+				});
 		})(url);
 	});
 
@@ -117,7 +101,7 @@ function downloadPhoto(photo,albumName,accessToken,callback) {
 	outputFile = fs.createWriteStream(__dirname + '/photos/' + albumName
 		+ '/' + photoName + '.jpg');
 
-	outputFile.on("error",function(){
+	outputFile.on('error',function(){
 		//I HAVE TO FIGURE OUT WHY THOSE ERRORS HAPPEN
 		photoName = albumName + Math.ceil(Math.random() * 200);
 		outputFile = fs.createWriteStream(__dirname + '/photos/' + albumName
@@ -134,15 +118,15 @@ function downloadAlbum(album,accessToken,callback){
 	* saves them in a specific folder */
 	var albumId = album.id;
 	var albumName = album.name;
-	var url = "https://graph.facebook.com/v2.5/" + albumId
-		+ "/photos?fields=name,images&access_token=" + accessToken;
+	var url = 'https://graph.facebook.com/v2.5/' + albumId
+		+ '/photos?fields=id,name,images&access_token=' + accessToken;
 
-	console.log("Downloading album " + albumName);
+	console.log('Downloading album ' + albumName);
 
 	getAllData(url,function(photos){
 		//updates photos' names as the album name plus an index
 		for (var i = 0; i < photos.length; i++)
-			photos[i].name = albumName + "_" + (i + 1);
+			photos[i].name = albumName + '_' + (i + 1);
 
 		//when all photos' information is get, then the downloading process starts
 		iterate(photos,downloadPhoto,[albumName,accessToken],callback);
@@ -172,11 +156,11 @@ function downloadPhotosToClient(res,callback){
 	// archive.finalize();
 
 	//sets event listener to send file when the writing is over
-	output.on("close",function(){
+	output.on('close',function(){
 		res.download(__dirname + '/zip/photos.zip',function(err){
 			if (err){
-				console.log("No such file or directory!");
-				res.send("0");
+				console.log('No such file or directory!');
+				res.send('0');
 			}
 			else{
 				callback();
@@ -189,21 +173,68 @@ function getAllPhotosFromAlbum(album,accessToken){
 
 	return new Promise( (resolve,reject) => {
 		let albumId = album.id,
-			url = "https://graph.facebook.com/v2.5/" + albumId
-				+ "/photos?fields=name,images&access_token=" + accessToken;
+			url = 'https://graph.facebook.com/v2.5/' + albumId
+				+ '/photos?fields=name,images&access_token=' + accessToken;
 
 		getAllData(url)
-		.then( photos => {
-			album.photos = photos;
-			resolve(album);
-		})
+			.then( photos => {
+				album.photos = photos;
+				resolve(album);
+			});
 	});
 
+}
+
+function formatDateToFolderName(date){
+	const day = date.getDate(),
+		  month = date.getMonth() + 1,
+		  year = date.getFullYear(),
+		  hours = date.getHours(),
+		  minutes = date.getMinutes(),
+		  seconds = date.getSeconds();
+	return `${year}-${month}-${day}--${hours}-${minutes}-${seconds}`
 }
 
 function getAllPhotosFromAlbums(albums,accessToken){
 	return Promise.all(albums.map(album => getAllPhotosFromAlbum(album,accessToken)));
 }
+
+function createFolders(albums){
+	const baseDirectory = __dirname + '/public/photos/' + formatDateToFolderName(new Date());
+
+	return new Promise( (outerResolve,outerReject) => {
+		
+		fs.mkdir(baseDirectory, err => {
+			if (err) return outerReject(err);
+
+			const promises = albums.map(album => new Promise( (resolve,reject) => {
+				const albumName = album.name;
+				const albumDirectory = baseDirectory + '/' + download.validateAlbumName(albumName);
+
+				fs.mkdir(albumDirectory, err => {
+					if (err) return reject(err);
+
+					//resolve single directory creation(for one album)
+					resolve(album);
+
+				});
+
+			}));
+
+			console.log('hey');
+			//resolves all directories creation(for all user's albums)
+			Promise.all(promises)
+				.then( albums => outerResolve({
+					albums,
+					destFolder: baseDirectory
+				}))
+				.catch(outerReject);
+
+		});
+	});
+
+}
+
 
 app.get('/',function(req,res){
 	res.redirect('/index.html');
@@ -213,17 +244,28 @@ app.get('/getAlbums',function(req,res){
 	//route made to get all the user's albums and their photos and disponibilize it to download
 	let accessToken = req.query.access_token,
 		userID = req.query.userID,
-		url = "https://graph.facebook.com/v2.5/" + userID + 
-				"/albums?fields=name,id&access_token=" + accessToken;
+		url = 'https://graph.facebook.com/v2.5/' + userID + 
+				'/albums?fields=name,id&access_token=' + accessToken;
 
-	console.log("Retrieving user's albums...")
+	console.log('Retrieving user\'s albums...');
 
 	//fetches all user albums' information
 	getAllData(url)
-	.then(albums => getAllPhotosFromAlbums(albums,accessToken))
-	.then(albumsWithPhotos => res.json(albumsWithPhotos))
-	.catch(error => res.status(400).json(error));
+		.then(albums => getAllPhotosFromAlbums(albums,accessToken))
+		.then(albumsWithPhotos => createFolders(albumsWithPhotos))
+		.then(objResult => download.downloadAlbums(objResult.albums,objResult.destFolder))
+		.then(() => {
+			console.log('finished downloading files!');
+			res.status(200).json({result: 'Photos downloaded!'})
+		})
+	// .then(albumsWithPhotos => res.json(albumsWithPhotos))
+		.catch(error => {
+			console.error(error);
+			res.status(400).json(error)
+		});
 
+		req.on('error',console.error);
+		req.on('end',console.error);
 });
 
 app.get('/download',function(req,res){
@@ -236,19 +278,18 @@ app.get('/download',function(req,res){
 	archive.finalize();
 
 	//sets event listener to send file when the writing is over
-	output.on("close",function(){
+	output.on('close',function(){
 		res.download(__dirname + '/public/zip/photos.zip',function(err){
 			if (err){
-				console.log("No such file or directory!");
-				res.send("0");
+				console.log('No such file or directory!');
+				res.send('0');
 			}
 		});
 	});
 
-})
+});
 
 app.use(express.static('public'));
 
-console.log("Listening to port " + port);
+console.log('Listening to port ' + port);
 app.listen(port);
-;
