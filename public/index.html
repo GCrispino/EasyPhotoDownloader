@@ -10,6 +10,7 @@
   function createDownloadButton(userID,accessToken){
     var link = 'https://easy-photo-downloader.herokuapp.com/getAlbums?userID=' + userID + '&access_token=' + accessToken,
         button = document.createElement('button');
+        button.innerHTML = 'Download photos!';
 
         button.addEventListener('click',function(){
           window.open(link);
