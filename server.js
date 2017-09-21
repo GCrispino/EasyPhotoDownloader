@@ -3,7 +3,7 @@ const fs = require('fs');
 const download = require('./download');
 
 const app = express();
-const port = 8080;
+const port = process.env.PORT || 80;;
 
 
 
@@ -289,7 +289,7 @@ app.get('/download',function(req,res){
 
 });
 
-app.use(express.static('public'));
 
-console.log('Listening to port ' + port);
-app.listen(port);
+app.listen(port,() => console.log('Listening to port ' + port + '...') );
+
+app.use(express.static('public'));
