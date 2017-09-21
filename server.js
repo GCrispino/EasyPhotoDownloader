@@ -1,5 +1,6 @@
 const express = require('express');
 const fs = require('fs');
+const Path = require('path');
 const download = require('./download');
 
 const app = express();
@@ -235,6 +236,11 @@ function createFolders(albums){
 
 }
 
+function readDirR(dir) {
+    return fs.statSync(dir).isDirectory()
+        ? Array.prototype.concat(...fs.readdirSync(dir).map(f => readDirR(path.join(dir, f))))
+        : dir;
+}
 
 app.get('/',function(req,res){
 	res.redirect('/index.html');
@@ -255,6 +261,7 @@ app.get('/getAlbums',function(req,res){
 		.then(albumsWithPhotos => createFolders(albumsWithPhotos))
 		.then(objResult => download.downloadAlbums(objResult.albums,objResult.destFolder))
 		.then(() => {
+			fs.listDir
 			console.log('finished downloading files!');
 			res.status(200).json({result: 'Photos downloaded!'})
 		})
