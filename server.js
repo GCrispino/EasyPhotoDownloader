@@ -143,10 +143,6 @@ function downloadAlbums(albums,accessToken,callback){
 function sendToClient(res){
 	let output;
 
-	let archive = archiver('zip', {
-	    zlib: { level: 9 } // Sets the compression level.
-	});
-
 	try {
 		//checks if directory exists
 		fs.accessSync(__dirname + '/zip');
@@ -158,8 +154,9 @@ function sendToClient(res){
 	return new Promise((resolve,reject) => {
 		output = fs.createWriteStream(__dirname + '/zip/photos.zip');
 
+		let archive = archiver('zip');
 		archive.pipe(output);
-		archive.bulk([{expand: true,cwd: __dirname + '/photos/',src:['*/*.*']}]);
+		archive.directory(__dirname + '/public/photos','Photos');
 		archive.finalize();
 
 		//sets event listener to send file when the writing is over
