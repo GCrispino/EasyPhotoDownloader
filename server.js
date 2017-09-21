@@ -141,9 +141,9 @@ function downloadAlbums(albums,accessToken,callback){
 }
 
 function sendToClient(res){
-	var output;
+	let output;
 
-	var archive = archiver('zip', {
+	let archive = archiver('zip', {
 	    zlib: { level: 9 } // Sets the compression level.
 	});
 
@@ -167,9 +167,9 @@ function sendToClient(res){
 			res.download(__dirname + '/zip/photos.zip',function(err){
 				if (err){
 					console.log('No such file or directory!');
-					res.send('0');
+					return reject(err);
 				}
-				else callback();
+				else return resolve();
 			});
 		});
 	});
