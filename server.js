@@ -8,7 +8,6 @@ const app = express();
 const port = process.env.PORT || 80;
 
 
-
 function iterate(array,func,args,callback){
 	/*iterates through an array executing a asynchronous function to each
 	 *element in a synchronous way, using a closure and recursion
@@ -64,9 +63,9 @@ function getAllData(url){
 						array = newData.data;
 
 					if (newData.paging && newData.paging.next){
-					//if there is more data to get, the function is recursively called
+						//if there is more data to get, the function is recursively called
 						url = newData.paging.next;
-	                getData(url);
+	               		getData(url);
 					}
 					else
 					//if there is not more data to get, then it resolves
@@ -77,67 +76,6 @@ function getAllData(url){
 
 	
 
-}
-
-function downloadPhoto(photo,albumName,accessToken,callback) {
-	/*download photo to file system using a photo object retrieved
-	 *from an API call*/
-
-	var photoName = photo.name;
-	var photoURL = photo.images[0].source;
-	var outputFile;
-
-	//album's name is validated
-	albumName = validateAlbumName(albumName);
-
-	try {
-		//checks if directory exists
-		fs.accessSync(__dirname + '/photos/' + albumName);
-	} catch (e) {
-		//if it doesn't exist, it gets created
-		fs.mkdirSync(__dirname + '/photos/' + albumName);
-	}
-
-	//write stream handling
-	//-------------------------------------------------------------------------
-	outputFile = fs.createWriteStream(__dirname + '/photos/' + albumName
-		+ '/' + photoName + '.jpg');
-
-	outputFile.on('error',function(){
-		//I HAVE TO FIGURE OUT WHY THOSE ERRORS HAPPEN
-		photoName = albumName + Math.ceil(Math.random() * 200);
-		outputFile = fs.createWriteStream(__dirname + '/photos/' + albumName
-			+ '/' + photoName + '.jpg');
-	});
-	//-------------------------------------------------------------------------
-
-	//loads data into file
-	return download.readURLtoFile(photoURL,outputFile);
-}
-
-function downloadAlbum(album,accessToken,callback){
-	/*downloads all pictures from an album and
-	* saves them in a specific folder */
-	var albumId = album.id;
-	var albumName = album.name;
-	var url = 'https://graph.facebook.com/v2.5/' + albumId
-		+ '/photos?fields=id,name,images&access_token=' + accessToken;
-
-	console.log('Downloading album ' + albumName);
-
-	getAllData(url,function(photos){
-		//updates photos' names as the album name plus an index
-		for (var i = 0; i < photos.length; i++)
-			photos[i].name = albumName + '_' + (i + 1);
-
-		//when all photos' information is get, then the downloading process starts
-		iterate(photos,downloadPhoto,[albumName,accessToken],callback);
-	});
-}
-
-function downloadAlbums(albums,accessToken,callback){
-	//function that downloads all pictures from all albums
-	iterate(albums,downloadAlbum,[accessToken],callback);
 }
 
 function sendToClient(res){
@@ -238,12 +176,6 @@ function createFolders(albums){
 
 }
 
-function readDirR(dir) {
-	return fs.statSync(dir).isDirectory()
-		? Array.prototype.concat(...fs.readdirSync(dir).map(f => readDirR(path.join(dir, f))))
-		: dir;
-}
-
 app.get('/',function(req,res){
 	res.redirect('/index.html');
 });
@@ -263,7 +195,6 @@ app.get('/getAlbums',function(req,res){
 		.then(albumsWithPhotos => createFolders(albumsWithPhotos))
 		.then(objResult => download.downloadAlbums(objResult.albums,objResult.destFolder))
 		.then(() => {
-			console.log(readDirR(__dirname + '/public/photos'));
 			console.log('finished downloading files!');
 			return sendToClient(res);
 			// res.status(200).json({result: 'Photos downloaded!'})
@@ -278,28 +209,6 @@ app.get('/getAlbums',function(req,res){
 	req.on('error',console.error);
 	req.on('end',console.error);
 });
-
-app.get('/download',function(req,res){
-	var output;
-
-	output = fs.createWriteStream(__dirname + '/public/zip/photos.zip');
-
-	archive.pipe(output);
-	archive.bulk([{expand: true,cwd: './public/',src:['*.*']}]);
-	archive.finalize();
-
-	//sets event listener to send file when the writing is over
-	output.on('close',function(){
-		res.download(__dirname + '/public/zip/photos.zip',function(err){
-			if (err){
-				console.log('No such file or directory!');
-				res.send('0');
-			}
-		});
-	});
-
-});
-
 
 app.listen(port,() => console.log('Listening to port ' + port + '...') );
 
