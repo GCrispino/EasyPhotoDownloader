@@ -1,6 +1,6 @@
 const express = require('express');
 const fs = require('fs');
-const Path = require('path');
+const path = require('path');
 const download = require('./download');
 
 const app = express();
