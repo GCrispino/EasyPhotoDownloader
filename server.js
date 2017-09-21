@@ -261,7 +261,7 @@ app.get('/getAlbums',function(req,res){
 		.then(albumsWithPhotos => createFolders(albumsWithPhotos))
 		.then(objResult => download.downloadAlbums(objResult.albums,objResult.destFolder))
 		.then(() => {
-			fs.listDir
+			console.log(readDirR(__dirname + '/public/photos'))
 			console.log('finished downloading files!');
 			res.status(200).json({result: 'Photos downloaded!'})
 		})
