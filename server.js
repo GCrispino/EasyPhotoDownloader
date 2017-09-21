@@ -1,10 +1,11 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const archiver = require('archiver');
 const download = require('./download');
 
 const app = express();
-const port = process.env.PORT || 80;;
+const port = process.env.PORT || 80;
 
 
 
@@ -139,8 +140,12 @@ function downloadAlbums(albums,accessToken,callback){
 	iterate(albums,downloadAlbum,[accessToken],callback);
 }
 
-function downloadPhotosToClient(res,callback){
+function sendToClient(res){
 	var output;
+
+	var archive = archiver('zip', {
+	    zlib: { level: 9 } // Sets the compression level.
+	});
 
 	try {
 		//checks if directory exists
@@ -150,22 +155,22 @@ function downloadPhotosToClient(res,callback){
 		fs.mkdirSync(__dirname + '/zip');
 	}
 
-	output = fs.createWriteStream(__dirname + '/zip/photos.zip');
+	return new Promise((resolve,reject) => {
+		output = fs.createWriteStream(__dirname + '/zip/photos.zip');
 
-	// archive.pipe(output);
-	// archive.bulk([{expand: true,cwd: __dirname + '/photos/',src:['*/*.*']}]);
-	// archive.finalize();
+		archive.pipe(output);
+		archive.bulk([{expand: true,cwd: __dirname + '/photos/',src:['*/*.*']}]);
+		archive.finalize();
 
-	//sets event listener to send file when the writing is over
-	output.on('close',function(){
-		res.download(__dirname + '/zip/photos.zip',function(err){
-			if (err){
-				console.log('No such file or directory!');
-				res.send('0');
-			}
-			else{
-				callback();
-			}
+		//sets event listener to send file when the writing is over
+		output.on('close',function(){
+			res.download(__dirname + '/zip/photos.zip',function(err){
+				if (err){
+					console.log('No such file or directory!');
+					res.send('0');
+				}
+				else callback();
+			});
 		});
 	});
 }
@@ -193,7 +198,7 @@ function formatDateToFolderName(date){
 		  hours = date.getHours(),
 		  minutes = date.getMinutes(),
 		  seconds = date.getSeconds();
-	return `${year}-${month}-${day}--${hours}-${minutes}-${seconds}`
+	return `${year}-${month}-${day}--${hours}-${minutes}-${seconds}`;
 }
 
 function getAllPhotosFromAlbums(albums,accessToken){
@@ -237,9 +242,9 @@ function createFolders(albums){
 }
 
 function readDirR(dir) {
-    return fs.statSync(dir).isDirectory()
-        ? Array.prototype.concat(...fs.readdirSync(dir).map(f => readDirR(path.join(dir, f))))
-        : dir;
+	return fs.statSync(dir).isDirectory()
+		? Array.prototype.concat(...fs.readdirSync(dir).map(f => readDirR(path.join(dir, f))))
+		: dir;
 }
 
 app.get('/',function(req,res){
@@ -261,18 +266,20 @@ app.get('/getAlbums',function(req,res){
 		.then(albumsWithPhotos => createFolders(albumsWithPhotos))
 		.then(objResult => download.downloadAlbums(objResult.albums,objResult.destFolder))
 		.then(() => {
-			console.log(readDirR(__dirname + '/public/photos'))
+			console.log(readDirR(__dirname + '/public/photos'));
 			console.log('finished downloading files!');
-			res.status(200).json({result: 'Photos downloaded!'})
+			return sendToClient(res);
+			// res.status(200).json({result: 'Photos downloaded!'})
 		})
+		.then(() => console.log('files sent to client!'))
 	// .then(albumsWithPhotos => res.json(albumsWithPhotos))
 		.catch(error => {
 			console.error(error);
-			res.status(400).json(error)
+			res.status(400).json(error);
 		});
 
-		req.on('error',console.error);
-		req.on('end',console.error);
+	req.on('error',console.error);
+	req.on('end',console.error);
 });
 
 app.get('/download',function(req,res){
