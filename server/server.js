@@ -155,15 +155,15 @@ app.get('/getAlbums',function(req,res){
 	//fetches all user albums' information
 	getAllData(url)
 		.then(albums => getAllPhotosFromAlbums(albums,accessToken))
-		.then(albumsWithPhotos => createFolders(albumsWithPhotos,userID))
-		.then(objResult => download.downloadAlbums(objResult.albums,objResult.destFolder))
-		.then(() => {
-			console.log('finished downloading files!');
-			return sendToClient(userID,res);
+		// .then(albumsWithPhotos => createFolders(albumsWithPhotos,userID))
+		// .then(objResult => download.downloadAlbums(objResult.albums,objResult.destFolder))
+		// .then(() => {
+			// console.log('finished downloading files!');
+			// return sendToClient(userID,res);
 			// res.status(200).json({result: 'Photos downloaded!'})
-		})
-		.then(() => console.log('files sent to client!'))
-	// .then(albumsWithPhotos => res.json(albumsWithPhotos))
+		// })
+		// .then(() => console.log('files sent to client!'))
+	.then(albumsWithPhotos => res.json(albumsWithPhotos))
 		.catch(error => {
 			console.error(error);
 			res.status(400).json(error);
