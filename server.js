@@ -1,39 +1,11 @@
 const express = require('express');
 const fs = require('fs');
-const path = require('path');
 const archiver = require('archiver');
 const download = require('./download');
 
 const app = express();
 const port = process.env.PORT || 80;
 
-
-function iterate(array,func,args,callback){
-	/*iterates through an array executing a asynchronous function to each
-	 *element in a synchronous way, using a closure and recursion
-	 *
-	 *PARAMETERS:
-	 *'array': array to be iterated through
-	 *'func': function that will be executed on each iteration
-	 *'args': arguments passed to function 'func', along with a
-	 	callback function
-	 * 'callback': callback function that is called at the end of the iteration
-	*/
-
-	(function iterator(i){
-		if (i < array.length){
-			func.apply(this,[array[i]].concat(args).concat(function(errMessage){
-				if (errMessage)
-					console.log('Error: ' + errMessage);
-				else
-					iterator(i + 1);
-			}));
-		}
-		else
-			callback();
-	})(0);
-
-}
 
 function getAllData(url){
 	/*This function gets all data of an API object by using the 'next' cursor
@@ -78,7 +50,7 @@ function getAllData(url){
 
 }
 
-function sendToClient(res){
+function sendToClient(userID,res){
 	let output;
 
 	try {
@@ -94,7 +66,7 @@ function sendToClient(res){
 
 		let archive = archiver('zip');
 		archive.pipe(output);
-		archive.directory(__dirname + '/public/photos','Photos');
+		archive.directory(__dirname + `/public/photos/${userID}`,'Photos');
 		archive.finalize();
 
 		//sets event listener to send file when the writing is over
@@ -126,22 +98,13 @@ function getAllPhotosFromAlbum(album,accessToken){
 
 }
 
-function formatDateToFolderName(date){
-	const day = date.getDate(),
-		  month = date.getMonth() + 1,
-		  year = date.getFullYear(),
-		  hours = date.getHours(),
-		  minutes = date.getMinutes(),
-		  seconds = date.getSeconds();
-	return `${year}-${month}-${day}--${hours}-${minutes}-${seconds}`;
-}
 
 function getAllPhotosFromAlbums(albums,accessToken){
 	return Promise.all(albums.map(album => getAllPhotosFromAlbum(album,accessToken)));
 }
 
-function createFolders(albums){
-	const baseDirectory = __dirname + '/public/photos/' + formatDateToFolderName(new Date());
+function createFolders(albums,userID){
+	const baseDirectory = __dirname + '/public/photos/' + userID;
 
 	return new Promise( (outerResolve,outerReject) => {
 		
@@ -192,11 +155,11 @@ app.get('/getAlbums',function(req,res){
 	//fetches all user albums' information
 	getAllData(url)
 		.then(albums => getAllPhotosFromAlbums(albums,accessToken))
-		.then(albumsWithPhotos => createFolders(albumsWithPhotos))
+		.then(albumsWithPhotos => createFolders(albumsWithPhotos,userID))
 		.then(objResult => download.downloadAlbums(objResult.albums,objResult.destFolder))
 		.then(() => {
 			console.log('finished downloading files!');
-			return sendToClient(res);
+			return sendToClient(userID,res);
 			// res.status(200).json({result: 'Photos downloaded!'})
 		})
 		.then(() => console.log('files sent to client!'))
