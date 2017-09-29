@@ -27,7 +27,7 @@ class Photo extends React.Component{
 			<div 
 				id={this.props.id} 
 				className="photo" 
-				onChange={this.props.onPhotoChange}
+				onChange={this.props.handleChange}
 			>
 				<img
 					src={lastImage.source}
@@ -40,7 +40,7 @@ class Photo extends React.Component{
 					{this.props.name}
 					<input type="checkbox" />
 				</label>
-				<button onClick={this.previewImage}>Preview</button>
+				<button className="btn btn-primary btn-xs imagePreviewButton" onClick={this.previewImage}>Preview</button>
 			</div>
 		);
 	}

@@ -5,6 +5,17 @@ class Album extends React.Component{
     constructor(props){
         super(props);
 
+        this.state = {
+            collapsed: false
+        }
+
+        this.toggleCollapse = this.toggleCollapse.bind(this);
+    }
+
+    toggleCollapse(){
+        this.setState({
+            collapsed: !this.state.collapsed
+        });
     }
 
     render(){
@@ -17,22 +28,17 @@ class Album extends React.Component{
                             id={`photo${this.props.index}-${i}`} 
                             name={photo.name}
                             images={photo.images}
-                            onChange={this.props.onPhotoChange} 
+                            handleChange={this.props.onPhotoChange} 
                         />
                     )
-                    // (
-                    //     <option>
-                    //         <Photo 
-                    //             image={photo.images[0]}
-                    //             onChange={this.props.handleChange}
-                    //         />
-                    //     </option>
-                    // )
             );
 
         return (
             <div className="album">
-                <label>
+                <a href={`#photoContainer${this.props.index}`} onClick={this.toggleCollapse} data-toggle="collapse">
+                     {this.state.collapsed ? 'Hide' : 'Show'}
+                </a>
+                <label className="albumLabel" >
                     {this.props.name}
                     <input 
                         type="checkbox" 
@@ -40,7 +46,7 @@ class Album extends React.Component{
                         id={'album' + this.props.index} 
                     />
                 </label>
-                <div className="photoContainer">{photos}</div>
+                <div className="collapse photoContainer" id={`photoContainer${this.props.index}`}>{photos}</div>
             </div>
         );
     }

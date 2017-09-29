@@ -16,19 +16,16 @@ class Container extends React.Component{
 		this.downloadImages = this.downloadImages.bind(this);
 	}
 
-	//REFACTOR THIS FUNCTIONS TO ARROW FUNCTION
 	createInitialState(){
-		const userAlbums = this.props.albums.map(
-			album => ({
-				name: album.name,
-				selected: false,
-				selectedPhotos: Array(album.photos.length).fill(false)
-			})
-		);
-
 		return {
-			userAlbums
-		};
+			userAlbums: this.props.albums.map(
+				album => ({
+					name: album.name,
+					selected: false,
+					selectedPhotos: Array(album.photos.length).fill(false)
+				})
+			)
+		}
 	}
 
 	albumHasPhotoSelected(selectedPhotos){
@@ -76,19 +73,13 @@ class Container extends React.Component{
 
 		const albumInputElem = document.getElementById(`album${albumIndex}`);
 		
-
 		const curState = this.state;
-		//REFACTOR THIS TO ONELINER LATER
-		const newSelectedPhotos = curState.userAlbums[albumIndex].selectedPhotos.map(
-			(isPhotoSelected,i) =>  {
-				if (i === photoIndex)
-					return !isPhotoSelected;
-				else return isPhotoSelected;
-			}
-		);
-		console.log('new selected photos',newSelectedPhotos);
 
-		//CHANGE CURRENT STATE TO REFLECT PHOTO INPUT CHANGE
+		const newSelectedPhotos = curState.userAlbums[albumIndex].selectedPhotos.map(
+			//Logical XOR
+			(isPhotoSelected,i) => (i === photoIndex) !== isPhotoSelected
+		);
+
 		const newUserAlbums = curState.userAlbums.map(
 			(userAlbum,i) => {
 				let newUserAlbum;
@@ -103,7 +94,6 @@ class Container extends React.Component{
 						selected: albumSelected,
 						selectedPhotos: newSelectedPhotos
 					};
-				
 				}
 				else newUserAlbum = userAlbum;
 
@@ -144,7 +134,7 @@ class Container extends React.Component{
         return (
 			<div>
 				<form id="albumList">{albums}</form>
-				<button onClick={this.downloadImages}>Download</button>
+				<button className="btn btn-primary" onClick={this.downloadImages}>Download</button>
 			</div>
 		);
 	}
