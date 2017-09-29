@@ -131,19 +131,13 @@ class Container extends React.Component{
 			
 				<Album 
 					key={i}
+					index={i}
 					name={album.name}
 					photos={album.photos}
 					onAlbumChange={this.handleAlbumChange}
 					onPhotoChange={this.handlePhotoChange}
-					index={i}
 				/>
 			
-				// <div onChange={this.handleAlbumChange} key={i}>
-				// 	<label>
-				// 		{album.name}
-				// 		<input type="checkbox" id={'album' + i} />
-				// 	</label>
-				// </div>
 			)
 		);
 

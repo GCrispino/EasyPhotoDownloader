@@ -1,9 +1,17 @@
 const React = require('react');
-const ReactDOM = require('react-dom');
 
 class Photo extends React.Component{
 	constructor(props){
 		super(props);
+
+		this.displayImage = this.displayImage.bind(this);
+	}
+
+	previewImage(e){
+		e.preventDefault();
+		
+		const imgElem = e.target.parentNode.querySelector('img');
+		imgElem.style.display = imgElem.style.display === 'none' ? 'block' : 'none';
 	}
 
 	displayImage(){
@@ -11,17 +19,29 @@ class Photo extends React.Component{
 	}
 
 	render(){
-		const image = this.props.image;
+		const lastImage = this.props.images[this.props.images.length - 1];
 
 		this.handleClick = this.props.onClick;
 
 		return (
-			<img
-				src={image.src}
-				width={image.width}
-				height={image.height}
-				onClick={this.displayImage}
-			/>
+			<div 
+				id={this.props.id} 
+				className="photo" 
+				onChange={this.props.onPhotoChange}
+			>
+				<img
+					src={lastImage.source}
+					width={lastImage.width}
+					height={lastImage.height}
+					onClick={this.displayImage}
+					style={{display: 'none'}}
+				/>
+				<label>
+					{this.props.name}
+					<input type="checkbox" />
+				</label>
+				<button onClick={this.previewImage}>Preview</button>
+			</div>
 		);
 	}
 

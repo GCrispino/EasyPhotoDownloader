@@ -1,4 +1,5 @@
 const React = require('react');
+const Photo = require('./Photo');
 
 class Album extends React.Component{
     constructor(props){
@@ -11,17 +12,13 @@ class Album extends React.Component{
             this.props.photos.map(
                 (photo,i) => 
                     (
-                        <div 
+                        <Photo
                             key={i}
                             id={`photo${this.props.index}-${i}`} 
-                            className="photo" 
-                            onChange={this.props.onPhotoChange.bind(this)} 
-                        >
-                            <label>
-                                {photo.name}
-                                <input type="checkbox" />
-                            </label>
-                        </div>
+                            name={photo.name}
+                            images={photo.images}
+                            onChange={this.props.onPhotoChange} 
+                        />
                     )
                     // (
                     //     <option>
