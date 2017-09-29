@@ -1,32 +1,51 @@
 const React = require('react');
 
 class Album extends React.Component{
-    constructor(){
-        super();
-    }
+    constructor(props){
+        super(props);
 
-    handlePhotoChange(e){
-        let selectedPhotos = this.state.selectedPhotos;
-        selectedPhotos[e.target.key] = e.target.selected;
-
-        this.setState({selectedPhotos});
     }
 
     render(){
         const photos = 
             this.props.photos.map(
-                photo => 
+                (photo,i) => 
                     (
-                        <option>
-                            <Photo 
-                                image={photo.images[0]}
-                                onChange={this.props.handleChange}
-                            />
-                        </option>
+                        <div 
+                            key={i}
+                            id={`photo${this.props.index}-${i}`} 
+                            className="photo" 
+                            onChange={this.props.onPhotoChange.bind(this)} 
+                        >
+                            <label>
+                                {photo.name}
+                                <input type="checkbox" />
+                            </label>
+                        </div>
                     )
+                    // (
+                    //     <option>
+                    //         <Photo 
+                    //             image={photo.images[0]}
+                    //             onChange={this.props.handleChange}
+                    //         />
+                    //     </option>
+                    // )
             );
 
-        return <select>{photos}</select>;
+        return (
+            <div className="album">
+                <label>
+                    {this.props.name}
+                    <input 
+                        type="checkbox" 
+                        onChange={this.props.onAlbumChange} 
+                        id={'album' + this.props.index} 
+                    />
+                </label>
+                <div className="photoContainer">{photos}</div>
+            </div>
+        );
     }
 }
 

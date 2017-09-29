@@ -3,3 +3,12 @@ body {
   padding: 0;
   font-family: sans-serif;
 }
+
+.photo{
+  margin-left: 20px;
+}
+
+#root{
+  width: 1000px;
+  margin: auto;
+}

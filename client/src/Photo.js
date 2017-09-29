@@ -2,8 +2,8 @@ const React = require('react');
 const ReactDOM = require('react-dom');
 
 class Photo extends React.Component{
-	constructor(){
-		super();
+	constructor(props){
+		super(props);
 	}
 
 	displayImage(){
