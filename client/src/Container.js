@@ -1,7 +1,3 @@
-
-
-
-
 const React = require('react');
 const Album = require('./Album');
 const jszip = require('jszip');
