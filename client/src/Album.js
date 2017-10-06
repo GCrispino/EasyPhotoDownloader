@@ -7,7 +7,7 @@ class Album extends React.Component{
 
         this.state = {
             collapsed: false
-        }
+        };
 
         this.toggleCollapse = this.toggleCollapse.bind(this);
     }
@@ -19,6 +19,7 @@ class Album extends React.Component{
     }
 
     render(){
+
         const photos = 
             this.props.photos.map(
                 (photo,i) => 

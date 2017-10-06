@@ -19,7 +19,7 @@ class Photo extends React.Component{
 	}
 
 	render(){
-		const lastImage = this.props.images[this.props.images.length - 1];
+		const smallestImage = this.props.images[this.props.images.length - 1];
 
 		this.handleClick = this.props.onClick;
 
@@ -30,9 +30,9 @@ class Photo extends React.Component{
 				onChange={this.props.handleChange}
 			>
 				<img
-					src={lastImage.source}
-					width={lastImage.width}
-					height={lastImage.height}
+					src={smallestImage.source}
+					width={smallestImage.width}
+					height={smallestImage.height}
 					onClick={this.displayImage}
 					style={{display: 'none'}}
 				/>

@@ -6,6 +6,11 @@ const download = require('./download');
 const app = express();
 const port = process.env.PORT || 80;
 
+app.use(function(req, res, next) {
+	res.header("Access-Control-Allow-Origin", "https://gcrispino.github.io/EasyPhotoDownloader");
+	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+	next();
+});
 
 function getAllData(url){
 	/*This function gets all data of an API object by using the 'next' cursor
@@ -151,7 +156,7 @@ app.get('/getAlbums',function(req,res){
 				'/albums?fields=name,id&access_token=' + accessToken;
 
 	console.log('Retrieving user\'s albums...');
-
+	console.log('url: ',url);
 	//fetches all user albums' information
 	getAllData(url)
 		.then(albums => getAllPhotosFromAlbums(albums,accessToken))
@@ -163,7 +168,7 @@ app.get('/getAlbums',function(req,res){
 			// res.status(200).json({result: 'Photos downloaded!'})
 		// })
 		// .then(() => console.log('files sent to client!'))
-	.then(albumsWithPhotos => res.json(albumsWithPhotos))
+		.then(albumsWithPhotos => res.json(albumsWithPhotos))
 		.catch(error => {
 			console.error(error);
 			res.status(400).json(error);

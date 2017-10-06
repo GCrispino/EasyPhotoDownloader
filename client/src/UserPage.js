@@ -2,40 +2,60 @@ const React = require('react');
 const Album = require('./Album');
 const jszip = require('jszip');
 
-class Container extends React.Component{
+
+class UserPage extends React.Component{
 	constructor(props){
 		super(props);
 
-		this.state = this.createInitialState();
+		this.createInitialState()
+		.then( userAlbums => this.setState({userAlbums}) )
+		.catch(console.error);
+		
 
 		this.handleAlbumChange = this.handleAlbumChange.bind(this);
 		this.handlePhotoChange = this.handlePhotoChange.bind(this);
 		this.downloadImages = this.downloadImages.bind(this);
+		this.assignNewSelectedPhotosToPhotoArray = this.assignNewSelectedPhotosToPhotoArray.bind(this);
+	}
 
+	assignNewSelectedPhotosToPhotoArray(photos,newSelectedPhotos){
+		return photos.map( (photo,i) => Object.assign(photo,{selected: newSelectedPhotos[i]}) );
 	}
 
 	createInitialState(){
-		return {
-			userAlbums: this.props.albums.map(
-				(album,i) => ({
-					name: album.name,
-					index: i,
-					selected: false,
-					selectedPhotos: Array(album.photos.length).fill(false)
-				})
-			)
-		}
-	}
+		const {userId,accessToken} = this.props;
 
-	albumHasPhotoSelected(selectedPhotos){
-		return selectedPhotos.indexOf(true) !== -1;
+		return new Promise((resolve,reject) => {
+			fetch(`https://easy-photo-downloader.herokuapp.com/getAlbums?userID=${userId}&access_token=${accessToken}`)
+			.then(response => response.json())
+			.then(albums => 
+				resolve(
+					albums.map(
+						(album,i) => {
+							const photos = album.photos.map(photo => Object.assign(photo,{selected: false}));
+
+								return {
+									name: album.name,
+									index: i,
+									selected: false,
+									photos
+								};
+						}
+					)
+				)
+			)
+			.catch(reject);	
+		});
 	}
 
 	handleAlbumChange(e){
 		const albumInputElem = e.target;
+		const albumIndex = parseInt(albumInputElem.id.match(/(\d)+/g)[0]);
 		const albumPhotosElems = albumInputElem.parentNode.nextSibling.childNodes;
 		const isAlbumChecked = albumInputElem.checked;
 		const userAlbums = this.state.userAlbums;
+		const {photos} = userAlbums[albumIndex];
+		
 
 		const newSelectedPhotos = Array.prototype.map.call(
 			albumPhotosElems,
@@ -47,23 +67,25 @@ class Container extends React.Component{
 			}
 		);
 
+		const newPhotos = this.assignNewSelectedPhotosToPhotoArray(photos,newSelectedPhotos);
+
 		const newUserAlbums = userAlbums.map(
 									(album,i) => e.target.id === 'album' + i 
 										? {
 											name: album.name,
 											index: album.index,
 											selected: e.target.checked,
-											selectedPhotos: newSelectedPhotos
+											photos: newPhotos
 										} 
 										: album
 								);
+
 
 		this.setState({
 			userAlbums: newUserAlbums
 		});
 
 	}
-
 
 	handlePhotoChange(e){
 		const photoDivElem = e.target.parentNode.parentNode;
@@ -74,18 +96,21 @@ class Container extends React.Component{
 		const albumInputElem = document.getElementById(`album${albumIndex}`);
 		
 		const curState = this.state;
-
-		const newSelectedPhotos = curState.userAlbums[albumIndex].selectedPhotos.map(
+		const {photos} = curState.userAlbums[albumIndex];
+		const selectedPhotos = photos.map(photo => photo.selected);
+		const newSelectedPhotos = selectedPhotos.map(
 			//Logical XOR
 			(isPhotoSelected,i) => (i === photoIndex) !== isPhotoSelected
 		);
-
+		
+		const newPhotos = this.assignNewSelectedPhotosToPhotoArray(photos,newSelectedPhotos);
+		
 		const newUserAlbums = curState.userAlbums.map(
 			(userAlbum,i) => {
 				let newUserAlbum;
 				
 				if (i === albumIndex) {
-					const albumSelected = this.albumHasPhotoSelected(newSelectedPhotos);
+					const albumSelected = newSelectedPhotos.indexOf(true) !== -1;
 					//checks or unchecks album input element
 					albumInputElem.checked = albumSelected;
 					
@@ -93,7 +118,7 @@ class Container extends React.Component{
 						name: userAlbum.name,
 						index: userAlbum.index,
 						selected: albumSelected,
-						selectedPhotos: newSelectedPhotos
+						photos: newPhotos
 					};
 				}
 				else newUserAlbum = userAlbum;
@@ -110,7 +135,7 @@ class Container extends React.Component{
 	}
 
 	fetchPhotosToZipFolder(photo,folder){
-		console.log('fetching photo...')
+		console.log('fetching photo...');
 		console.log(`id: ${photo.id}`);
 		return new Promise((resolve,reject) => {
 			fetch(photo.images[0].source)
@@ -120,7 +145,7 @@ class Container extends React.Component{
 				folder.file(`${photo.id}.jpg`,blob);
 				resolve();
 			})
-			.catch(reject)
+			.catch(reject);
 		});
 	}
 
@@ -138,15 +163,18 @@ class Container extends React.Component{
 				index: selectedAlbum.index,
 				selected: selectedAlbum.selected	
 			};
-
-			//fetch the selected photos from 'this.props.albums'
+			
+			//fetch the selected photos from 'this.state.userAlbums'
 			newSelectedAlbum.photos = 
-				selectedAlbum.selectedPhotos
+				// selectedAlbum.selectedPhotos
+				selectedAlbum.photos
+				.map(photo => {console.log(photo);return photo.selected;})
 				.map((selectedPhoto,photoIndex) => {
 					if (selectedPhoto)
-						return this.props.albums[selectedAlbum.index].photos[photoIndex];
+						return this.state.userAlbums[selectedAlbum.index].photos[photoIndex];
+					return null;
 				})
-				.filter(selectedPhoto => selectedPhoto); //exclude undefineds
+				.filter(photo => photo ? photo.selected : null); //exclude undefineds
 
 			return newSelectedAlbum;
 		});
@@ -160,12 +188,7 @@ class Container extends React.Component{
 		const zip = new jszip();
 		const promises = [];
 
-		console.log('photos: ',selectedPhotos);
-		
 		selectedPhotos.forEach(album => {
-			console.log('album: ',album);
-			console.log(album.photos);
-			console.log(this.state.userAlbums);
 			const folder = zip.folder(album.name);
 			
 			promises.push(
@@ -175,24 +198,25 @@ class Container extends React.Component{
 		
 		Promise.all(promises)
 		.then(() => {
-			console.log('acabou');
-			zip.generateAsync({type:"blob"})
+			zip.generateAsync({type:'blob'})
 			.then( content => {
 				const aElement = document.createElement('a');
 				const objectURL = URL.createObjectURL(content);
 				
-				aElement.href = objectURL
+				aElement.href = objectURL;
 				aElement.download = 'photos.zip';
 				aElement.click();
-			});
+			})
+			.catch(console.error);
 		})
+		.catch(console.error);
 
 		
 	}
 	
 	render(){
-		
-		const albums = this.props.albums.map(
+
+		const albums = this.state ? (this.state.userAlbums.map(
 			(album,i) => (
 			
 				<Album 
@@ -204,8 +228,8 @@ class Container extends React.Component{
 					onPhotoChange={this.handlePhotoChange}
 				/>
 			
-			)
-		);
+			))
+		) : null;
 
         return (
 			<div>
@@ -216,4 +240,4 @@ class Container extends React.Component{
 	}
 }
 
-module.exports = Container;
+module.exports = UserPage;
