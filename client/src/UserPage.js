@@ -202,9 +202,13 @@ class UserPage extends React.Component{
 			.then( content => {
 				const aElement = document.createElement('a');
 				const objectURL = URL.createObjectURL(content);
-				
+			
+				aElement.style.display = 'none';
 				aElement.href = objectURL;
 				aElement.download = 'photos.zip';
+
+				document.body.appendChild(aElement);
+
 				aElement.click();
 			})
 			.catch(console.error);
