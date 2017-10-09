@@ -7,15 +7,22 @@ class UserPage extends React.Component{
 	constructor(props){
 		super(props);
 
-		this.createInitialState()
-		.then( userAlbums => this.setState({userAlbums}) )
-		.catch(console.error);
-		
+		this.state = ({loaded: false});
 
 		this.handleAlbumChange = this.handleAlbumChange.bind(this);
 		this.handlePhotoChange = this.handlePhotoChange.bind(this);
 		this.downloadImages = this.downloadImages.bind(this);
 		this.assignNewSelectedPhotosToPhotoArray = this.assignNewSelectedPhotosToPhotoArray.bind(this);
+	}
+
+	componentDidMount(){
+		this.createInitialState()
+		.then( userAlbums => this.setState({
+			userAlbums,
+			loaded: true
+		}) )
+		.catch(console.error);
+		
 	}
 
 	assignNewSelectedPhotosToPhotoArray(photos,newSelectedPhotos){
@@ -26,7 +33,8 @@ class UserPage extends React.Component{
 		const {userId,accessToken} = this.props;
 
 		return new Promise((resolve,reject) => {
-			fetch(`https://easy-photo-downloader.herokuapp.com/getAlbums?userID=${userId}&access_token=${accessToken}`)
+			// fetch(`https://easy-photo-downloader.herokuapp.com/getAlbums?userID=${userId}&access_token=${accessToken}`)
+			fetch(`http://localhost/getAlbums?userID=${userId}&access_token=${accessToken}`)
 			.then(response => response.json())
 			.then(albums => 
 				resolve(
@@ -183,10 +191,18 @@ class UserPage extends React.Component{
 
 	//downloads images and saves them to user
 	downloadImages(){
+		this.setState({downloading: true});
+
 		const {userAlbums} = this.state;
 		const selectedPhotos = this.filterSelectedPhotos(userAlbums);
 		const zip = new jszip();
 		const promises = [];
+
+		if (selectedPhotos.length === 0){
+			this.setState({downloading: false});
+			return ;
+		}
+	
 
 		selectedPhotos.forEach(album => {
 			const folder = zip.folder(album.name);
@@ -210,17 +226,28 @@ class UserPage extends React.Component{
 				document.body.appendChild(aElement);
 
 				aElement.click();
+				this.setState({downloading: false});
+		
 			})
-			.catch(console.error);
+			.catch(err => {
+				this.setState({downloading: false});
+				console.error(err);
+			});
 		})
-		.catch(console.error);
+		.catch(err => {
+			this.setState({downloading: false});
+			console.error(err);
+		});
 
 		
 	}
 	
 	render(){
 
-		const albums = this.state ? (this.state.userAlbums.map(
+		if (this.state.downloading)
+			return <div>Downloading...(please wait)</div>;
+
+		const albums = this.state.loaded ? (this.state.userAlbums.map(
 			(album,i) => (
 			
 				<Album 
@@ -236,10 +263,12 @@ class UserPage extends React.Component{
 		) : null;
 
         return (
-			<div>
-				<form id="albumList">{albums}</form>
-				<button className="btn btn-primary" onClick={this.downloadImages}>Download</button>
-			</div>
+				this.state.loaded ?
+				<div>
+					<form id="albumList">{albums}</form>
+					<button className="btn btn-primary" onClick={this.downloadImages}>Download</button>
+				</div>
+				: <div style={{textAlign: 'center'}}>Loading...</div>
 		);
 	}
 }

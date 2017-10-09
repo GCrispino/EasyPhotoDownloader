@@ -11,18 +11,26 @@ class App extends React.Component{
 		super(props);
 
 
-		if (window.location.protocol === 'http:')
-			window.location.protocol = 'https:';
+		// if (window.location.protocol === 'http:')
+		// 	window.location.protocol = 'https:';
 
 
 		const appId = '1684103011832056';
-		const self = this;
+		
 		
 		this.state = {
 			appId,
-			loggedIn: false
+			loggedIn: false,
+			sdkLoaded: false
 		};
 
+
+		this.statusChangeCallback = this.statusChangeCallback.bind(this);
+	}
+
+	componentDidMount(){
+		const self = this;
+		
 		(function(d, s, id) {
 			let js, fjs = d.getElementsByTagName(s)[0];
 			if (d.getElementById(id)) return;
@@ -30,10 +38,13 @@ class App extends React.Component{
 			js.src = `//connect.facebook.net/pt_BR/sdk.js#xfbml=1&version=v2.10&appId=${self.state.appId}`;
 			fjs.parentNode.insertBefore(js, fjs);
 
-			js.addEventListener('load',() => self.state = {FB : window.FB});
-		}(document, 'script', 'facebook-jssdk'));
-
-		this.statusChangeCallback = this.statusChangeCallback.bind(this);
+			js.addEventListener('load',() => {
+				self.setState({
+					sdkLoaded: true,
+					FB : window.FB
+				});
+			});
+		})(document, 'script', 'facebook-jssdk');
 	}
 
 	// This is called with the results from from FB.getLoginStatus().
@@ -77,9 +88,11 @@ class App extends React.Component{
 	render(){
 		const {userId,accessToken} = this.state;
 		const componentToRender = 
-			this.state.loggedIn 
-			? <UserPage userId={userId} accessToken={accessToken} />
-			: <LoginPage handleLogin={this.handleLogin.bind(this)}/>;
+			this.state.sdkLoaded ?
+				this.state.loggedIn 
+				? <UserPage userId={userId} accessToken={accessToken} />
+				: <LoginPage handleLogin={this.handleLogin.bind(this)}/>
+			: <div>Loading FB info...</div>;
 		return componentToRender;
 	}
 }
