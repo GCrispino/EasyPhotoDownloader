@@ -11,8 +11,8 @@ class App extends React.Component{
 		super(props);
 
 
-		// if (window.location.protocol === 'http:')
-		// 	window.location.protocol = 'https:';
+		if (window.location.protocol === 'http:')
+			window.location.protocol = 'https:';
 
 
 		const appId = '1684103011832056';
@@ -30,7 +30,7 @@ class App extends React.Component{
 
 	componentDidMount(){
 		const self = this;
-		
+
 		(function(d, s, id) {
 			let js, fjs = d.getElementsByTagName(s)[0];
 			if (d.getElementById(id)) return;

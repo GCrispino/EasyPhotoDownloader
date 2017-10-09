@@ -33,8 +33,7 @@ class UserPage extends React.Component{
 		const {userId,accessToken} = this.props;
 
 		return new Promise((resolve,reject) => {
-			// fetch(`https://easy-photo-downloader.herokuapp.com/getAlbums?userID=${userId}&access_token=${accessToken}`)
-			fetch(`http://localhost/getAlbums?userID=${userId}&access_token=${accessToken}`)
+			fetch(`https://easy-photo-downloader.herokuapp.com/getAlbums?userID=${userId}&access_token=${accessToken}`)
 			.then(response => response.json())
 			.then(albums => 
 				resolve(
