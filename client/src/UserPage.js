@@ -71,7 +71,7 @@ class UserPage extends React.Component{
 
 	handleAlbumChange(e){
 		const albumInputElem = e.target;
-		const albumIndex = parseInt(albumInputElem.id.match(/(\d)+/g)[0]);
+		const albumIndex = parseInt(albumInputElem.id.match(/(\d)+/g)[0],10);
 		const albumPhotosElems = albumInputElem.parentNode.nextSibling.childNodes;
 		const isAlbumChecked = albumInputElem.checked;
 		const userAlbums = this.state.userAlbums;
@@ -111,8 +111,8 @@ class UserPage extends React.Component{
 	handlePhotoChange(e){
 		const photoDivElem = e.target.parentNode.parentNode;
 		
-		const albumIndex = parseInt(photoDivElem.id.match(/(\d)*-/)[0].slice(0,-1));
-		const photoIndex = parseInt(photoDivElem.id.match(/-(\d)*/)[0].slice(1));
+		const albumIndex = parseInt(photoDivElem.id.match(/(\d)*-/)[0].slice(0,-1),10);
+		const photoIndex = parseInt(photoDivElem.id.match(/-(\d)*/)[0].slice(1),10);
 
 		const albumInputElem = document.getElementById(`album${albumIndex}`);
 		
