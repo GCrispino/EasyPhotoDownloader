@@ -2,4 +2,5 @@
 /client/build/
 /client/node_modules/
 /.vscode/
+/.vscode/*
 
