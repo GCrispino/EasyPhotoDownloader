@@ -2,6 +2,8 @@ const React = require('react');
 const Album = require('./Album');
 const DownloadStatus = require('./DownloadStatus');
 const jszip = require('jszip');
+const Loader = require('react-loader');
+
 
 class UserPage extends React.Component{
 	constructor(props){
@@ -156,13 +158,10 @@ class UserPage extends React.Component{
 	}
 
 	fetchPhotoToZipFolder(photo,folder){
-		// console.log('fetching photo...');
-		// console.log(`id: ${photo.id}`);
 		return new Promise((resolve,reject) => {
 			fetch(photo.images[0].source)
 			.then(response => response.blob())
 			.then(blob => {
-				// console.log('photo fetched');
 				folder.file(`${photo.id}.jpg`,blob);
 				resolve();
 			})
@@ -226,7 +225,6 @@ class UserPage extends React.Component{
 		const zip = new jszip();
 		const promises = [];
 		
-		// console.log(selectedPhotos);
 
 		if (selectedPhotos.length === 0){
 			this.setState({downloading: false});
@@ -287,12 +285,24 @@ class UserPage extends React.Component{
 			
 				})
 				.catch(err => {
-					this.setState({downloading: false});
+					this.setState({
+						userAlbums: this.initialUserAlbums,
+						downloadInfo: {
+							downloading: false,
+							photosToDownload: this.state.photosToDownload
+						}
+					});
 					console.error(err);
 				});
 			})
 			.catch(err => {
-				this.setState({downloading: false});
+				this.setState({
+					userAlbums: this.initialUserAlbums,
+					downloadInfo: {
+						downloading: false,
+						photosToDownload: this.state.photosToDownload
+					}
+				});
 				console.error(err);
 			});
 			
@@ -334,11 +344,14 @@ class UserPage extends React.Component{
 
         return (
 				this.state.loaded ?
-				<div>
-					<form id="albumList">{albums}</form>
-					<button className="btn btn-primary" onClick={this.downloadImages}>Download</button>
-				</div>
-				: <div style={{textAlign: 'center'}}>Loading...</div>
+					<div>
+						<form id="albumList">{albums}</form>
+						<button className="btn btn-primary" onClick={this.downloadImages}>Download</button>
+					</div>
+				: <div>
+						<Loader />
+						<div style={{ textAlign: 'center' }}>Loading...</div>
+					</div>
 		);
 	}
 }

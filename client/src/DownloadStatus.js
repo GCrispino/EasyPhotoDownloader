@@ -1,4 +1,5 @@
 const React = require('react');
+const Loader = require('react-loader');
 
 class DownloadStatus extends React.Component{
 	getDownloadedPhotos(){
@@ -19,6 +20,7 @@ class DownloadStatus extends React.Component{
 		const downloadedPhotos = this.getDownloadedPhotos();
 			return (
 				<div>
+					<Loader /> 
 					Downloading...(please wait)
 					<div>{downloadedPhotos.length} / {nAllPhotos} photos</div>
 				</div>

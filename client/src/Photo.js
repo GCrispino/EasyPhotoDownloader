@@ -10,9 +10,6 @@ class Photo extends React.Component{
 
 	previewImage(e){
 		e.preventDefault();
-		
-		// const imgElem = e.target.parentNode.querySelector('img');
-		// imgElem.style.display = imgElem.style.display === 'none' ? 'block' : 'none';
 	}
 
 	displayImage(){

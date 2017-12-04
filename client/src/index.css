@@ -18,10 +18,25 @@ body {
   box-shadow: 0px 0px 15px 0px #FFFCE3;
 }
 
+.loader {
+  position: relative;
+  margin-top: 20px;
+  margin-bottom: 30px;
+  padding-bottom: 10px;
+}
+
+.loader *{
+  position: relative;
+}
+
 #root{
   width: 1000px;
   margin: auto;
   margin-top: 15px;
   border: 2px solid black;
   padding: 15px;
+}
+
+#loginButton{
+  width: 170px;
 }
