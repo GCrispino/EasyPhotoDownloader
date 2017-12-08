@@ -4,7 +4,7 @@ class LoginPage extends React.Component{
 	render(){
 		return (
 			<div id="loginPage" className="row">
-				<button className="btn btn-light btn-lg col-md-2 col-md-offset-5" id="loginButton" onClick={this.props.handleLogin}>Login!</button>
+				<button className="btn btn-primary btn-lg col-md-2 col-md-offset-5" id="loginButton" onClick={this.props.handleLogin}>Continue with Facebook!</button>
 			</div>
 		);
 	}
