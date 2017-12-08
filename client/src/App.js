@@ -19,7 +19,7 @@ class App extends React.Component{
 		this.state = {
 			appId,
 			loggedIn: false,
-			sdkLoaded: false
+			sdkLoaded: true
 		};
 
 
@@ -80,7 +80,7 @@ class App extends React.Component{
 	}
 
 	handleLogin(){
-		this.state.FB.login(this.statusChangeCallback);
+		this.state.FB.login(this.statusChangeCallback,{scope: 'user_photos'});
 	}
 
 	render(){
