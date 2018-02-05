@@ -10,8 +10,8 @@ class App extends React.Component{
 	constructor(props){
 		super(props);
 
-		if (window.location.protocol === 'http:')
-			window.location.protocol = 'https:';
+		 if (window.location.protocol === 'http:')
+		 	window.location.protocol = 'https:';
 
 		const appId = '1684103011832056';
 		
