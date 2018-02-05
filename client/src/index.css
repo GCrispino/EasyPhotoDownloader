@@ -5,10 +5,31 @@ body {
 }
 
 .photo{
-  margin-left: 20px;
+  border-width: .5px;
+  border-color: rgba(0,0,0,.2);
+  display: inline-block;
+  overflow: hidden;
+  width: 97%;
+  /* margin-left: 20px; */
+  border-style: solid;
+  padding: 9px;
 }
 
-.photo input{
+
+.photo label{
+  float: left;
+  white-space: nowrap;
+  width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.photo button{
+  float: right;
+}
+
+.photo label input{
+  display: inline-block;
   margin-left: 10px !important;
   margin-right: 10px !important;
 }
@@ -29,8 +50,19 @@ body {
   position: relative;
 }
 
+
+.button-center{
+  display: block;
+  margin: auto;
+}
+
+.btn.button-center{
+  display: block;
+  margin: auto;
+}
+
 #root{
-  width: 1000px;
+  width: 90%;
   margin: auto;
   margin-top: 15px;
   border: 2px solid black;
@@ -39,4 +71,6 @@ body {
 
 #loginButton{
   width: 231px;
+  display: block;
+  margin: auto;
 }

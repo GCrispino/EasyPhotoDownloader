@@ -29,9 +29,9 @@ class Photo extends React.Component{
 			>
 				
 				<label>
-					{this.props.name}
-					<input type="checkbox" />
+					{this.props.name ? this.props.name : '*Photo without title*'}
 				</label>
+				<input type="checkbox" />
 				<button className="btn btn-primary btn-xs imagePreviewButton" data-toggle="modal" data-target={'#photoModal' + this.props.id} onClick={this.previewImage}>Preview</button>
 				<div id={'photoModal' + this.props.id} className="modal fade" role="dialog">
 					<div className="modal-dialog">
