@@ -10,7 +10,6 @@ body {
   display: inline-block;
   overflow: hidden;
   width: 97%;
-  /* margin-left: 20px; */
   border-style: solid;
   padding: 9px;
 }

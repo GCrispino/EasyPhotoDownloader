@@ -1,5 +1,9 @@
 const React = require('react');
 const Photo = require('./Photo');
+const FontAwesomeIcon = require('@fortawesome/react-fontawesome');
+const faArrowRight = require('@fortawesome/fontawesome-free-solid/faArrowRight');
+const faArrowDown = require('@fortawesome/fontawesome-free-solid/faArrowDown');
+
 
 class Album extends React.Component{
     constructor(props){
@@ -37,7 +41,11 @@ class Album extends React.Component{
         return (
             <div className="album">
                 <a href={`#photoContainer${this.props.index}`} onClick={this.toggleCollapse} data-toggle="collapse">
-                     {this.state.collapsed ? 'Hide' : 'Show'}
+                     {
+					 	this.state.collapsed ? 
+							 <FontAwesomeIcon icon={faArrowDown}/> 
+							: <FontAwesomeIcon icon={faArrowRight}/>
+					}
                 </a>
                 <label className="albumLabel" >
                     {this.props.name}
