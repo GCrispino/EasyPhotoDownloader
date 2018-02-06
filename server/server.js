@@ -6,12 +6,21 @@ const download = require('./download');
 const app = express();
 const port = process.env.PORT || 80;
 
-app.use(function(req, res, next) {
-	res.header("Access-Control-Allow-Origin", "https://gcrispino.github.io");
-	// res.header("Access-Control-Allow-Origin", "*");
-	// res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+
+app.use(function(req, res, next) {	
+
+	switch (process.env.NODE_ENV) {
+		case 'production':
+			res.header("Access-Control-Allow-Origin", "https://gcrispino.github.io");
+			break;
+		default:
+			res.header("Access-Control-Allow-Origin", "*");
+			res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+	}
+	
 	next();
 });
+
 
 function getAllData(url){
 	/*This function gets all data of an API object by using the 'next' cursor
