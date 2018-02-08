@@ -1,11 +1,26 @@
 const React = require('react');
+const {Button,Modal} = require('semantic-ui-react');
 
 //CHANGE IMAGE PREVIEW SIZE 
 class Photo extends React.Component{
 	constructor(props){
 		super(props);
 
+		this.state = {
+			open: false
+		};
 		this.displayImage = this.displayImage.bind(this);
+		this.close = this.close.bind(this);
+	}
+
+	test(e){
+		e.preventDefault();
+		this.setState({ open: true });		
+	}
+
+	close(e){
+		e.preventDefault();
+		this.setState({ open: false });		
 	}
 
 	previewImage(e){
@@ -13,11 +28,11 @@ class Photo extends React.Component{
 	}
 
 	displayImage(){
-		console.log('displaying image!');
 	}
 
 	render(){
-		const smallestImage = this.props.images[this.props.images.length - 1];
+		const smallestImage = this.props.images[this.props.images.length - 1],
+			{open} = this.state;
 
 		this.handleClick = this.props.onClick;
 
@@ -32,32 +47,26 @@ class Photo extends React.Component{
 					{this.props.name ? this.props.name : '*Photo without title*'}
 				</label>
 				<input type="checkbox" />
-				<button className="btn btn-primary btn-xs imagePreviewButton" data-toggle="modal" data-target={'#photoModal' + this.props.id} onClick={this.previewImage}>Preview</button>
-				<div id={'photoModal' + this.props.id} className="modal fade" role="dialog">
-					<div className="modal-dialog">
-
-						<div className="modal-content">
-							<div className="modal-header">
-								<button type="button" className="close" data-dismiss="modal">&times;</button>
-								<h4 className="modal-title">{this.props.name}</h4>
-							</div>
-							<div className="modal-body">
-								<img
-									className="center-block"
-									src={smallestImage.source}
-									alt={this.props.name}
-									width={smallestImage.width}
-									height={smallestImage.height}
-									onClick={this.displayImage}
-								/>
-							</div>
-							<div className="modal-footer">
-								<button type="button" className="btn btn-default" data-dismiss="modal">Close</button>
-							</div>
-						</div>
-
-					</div>
-				</div>
+				<Button className='photoButton' onClick={this.test.bind(this)}>Preview</Button>
+ 
+				<Modal size='small' open={open} onClose={this.close}>
+					<Modal.Header>
+						{this.props.name}
+					</Modal.Header>
+					<Modal.Content style={{textAlign: 'center'}} >
+						<img
+							src={smallestImage.source}
+							alt={this.props.name}
+							width={smallestImage.width}
+							height={smallestImage.height}
+							onClick={this.displayImage}
+						/>
+					</Modal.Content>
+					<Modal.Actions>
+						<Button negative icon='remove' labelPosition='right' content='Close' onClick={this.close}/>
+					</Modal.Actions>
+				</Modal>
+				
 			</div>
 		);
 	}

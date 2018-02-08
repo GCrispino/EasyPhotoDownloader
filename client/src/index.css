@@ -1,17 +1,45 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: sans-serif;
+  font-family: Lato,'Helvetica Neue',Arial,Helvetica,sans-serif;;
+}
+
+a{
+  text-decoration: none;
+  color: black;
+}
+
+p{
+  font-weight: bold;
+}
+
+h1,.headText{
+  text-align: center;
+  margin-bottom: 1%;
+}
+
+h3{
+  text-align: center;  
+  margin-bottom: 2%;
+}
+
+.photoContainer{
+  clear: both;
 }
 
 .photo{
-  border-width: .5px;
-  border-color: rgba(0,0,0,.2);
+  border-width: 1px;
+  border-radius: 3px;
+  border-color: rgba(119, 109, 109, 0.38);
   display: inline-block;
   overflow: hidden;
   width: 97%;
   border-style: solid;
   padding: 9px;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  font-family: Lato,'Helvetica Neue',Arial,Helvetica,sans-serif;
+  font-size: 1.1rem;
 }
 
 
@@ -23,19 +51,63 @@ body {
   text-overflow: ellipsis;
 }
 
-.photo button{
+.photo input{
+  display: inline-block;
+  margin-left: .5rem !important;
+}
+
+.button.photoButton{
+  transition: .5s background;
+  float: right;
+  margin-right: .5rem;
+  background-color: rgb(53, 218, 217);
+}
+
+.button.photoButton:hover{
+  background: rgb(38, 177, 176);
+}
+
+.button.photoButton:visited{
+  background: rgb(38, 177, 176);
+}
+
+.button.photoButton:active{
+  background: rgb(38, 177, 176);
+}
+
+.album{
+  width: 100%;
+  display: inline-block;
+}
+
+.album a{
+  float: left;
+}
+
+.album i{
+  font-size: 1.3rem;
+}
+
+.album input{
+  margin-left: 2rem;
   float: right;
 }
 
-.photo label input{
-  display: inline-block;
-  margin-left: 10px !important;
-  margin-right: 10px !important;
-}
-
 .albumLabel{
+  float: left;
+  font-size: 1.7rem;
   background: #FFFCE3;
   box-shadow: 0px 0px 15px 0px #FFFCE3;
+}
+
+.album .title{
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+
+.album .title{
+  font-weight: bold;
+  font-size: 1.25rem !important;
 }
 
 .loader {
@@ -60,16 +132,66 @@ body {
   margin: auto;
 }
 
-#root{
-  width: 90%;
-  margin: auto;
-  margin-top: 15px;
-  border: 2px solid black;
-  padding: 15px;
+.arrowRotate{
+  transform: rotate(90deg);
 }
 
-#loginButton{
-  width: 231px;
+.button.downloadButton{
+  transition: .5s background;  
   display: block;
   margin: auto;
+  margin-top: 1.5rem;
+  font-size: 1.2rem;
+  background: rgb(53, 218, 217);
+}
+
+.button.downloadButton:hover{
+  background: rgb(38, 177, 176);
+}
+
+.button.downloadButton:active{
+  background: rgb(38, 177, 176);
+}
+.button.downloadButton:visited{
+  background: rgb(38, 177, 176);
+}
+
+.accordion .title{
+  display: inline-block;
+}
+
+#root{
+  width: 65%;
+  margin: auto;
+  margin-top: 15px;
+  border: .175rem solid rgba(119, 109, 109, 1);
+  border-radius: 1.2rem;
+  box-shadow: inset 1px 0px 4px 0px #858585;
+  padding: 3rem;
+}
+
+#footer{
+  margin-top: 2rem;
+  text-align: center;
+}
+
+#footer p{
+  margin-bottom: 1rem;
+}
+
+
+#footer i{
+  transition: .3s color;
+}
+
+#footer i:hover{
+  color: rgba(0,0,0,0.6);
+}
+
+#loginPage{
+  text-align: center;
+}
+
+#loginPage button{
+  font-size: 1.3rem;
 }

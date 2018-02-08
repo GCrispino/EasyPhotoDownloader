@@ -3,6 +3,7 @@ const Album = require('./Album');
 const DownloadStatus = require('./DownloadStatus');
 const jszip = require('jszip');
 const Loader = require('react-loader');
+const { Button } = require('semantic-ui-react');
 
 class UserPage extends React.Component{
 	constructor(props){
@@ -48,7 +49,7 @@ class UserPage extends React.Component{
 
 		return new Promise((resolve,reject) => {
 			 fetch(`https://easy-photo-downloader.herokuapp.com/getAlbums?userID=${userId}&access_token=${accessToken}`)
-			//fetch(`http://localhost/getAlbums?userID=${userId}&access_token=${accessToken}`)
+			// fetch(`http://localhost/getAlbums?userID=${userId}&access_token=${accessToken}`)
 			.then(response => response.json())
 			.then(albums => 
 				resolve(
@@ -73,7 +74,7 @@ class UserPage extends React.Component{
 	handleAlbumChange(e){
 		const albumInputElem = e.target;
 		const albumIndex = parseInt(albumInputElem.id.match(/(\d)+/g)[0],10);
-		const albumPhotosElems = albumInputElem.parentNode.nextSibling.childNodes;
+		const albumPhotosElems = albumInputElem.nextSibling.firstChild.childNodes;
 		const isAlbumChecked = albumInputElem.checked;
 		const userAlbums = this.state.userAlbums;
 		const {photos} = userAlbums[albumIndex];
@@ -110,8 +111,7 @@ class UserPage extends React.Component{
 	}
 
 	handlePhotoChange(e){
-		const photoDivElem = e.target.parentNode.parentNode;
-		
+		const photoDivElem = e.target.parentNode;
 		const albumIndex = parseInt(photoDivElem.id.match(/(\d)*-/)[0].slice(0,-1),10);
 		const photoIndex = parseInt(photoDivElem.id.match(/-(\d)*/)[0].slice(1),10);
 
@@ -345,7 +345,9 @@ class UserPage extends React.Component{
 				this.state.loaded ?
 				<div>
 						<form id="albumList">{albums}</form>
-						<button className="btn btn-primary button-center" onClick={this.downloadImages}>Download</button>
+					<Button onClick={this.downloadImages} className='downloadButton'>
+						Download Photos!
+					</Button>
 					</div>
 				: <div>
 						<Loader />

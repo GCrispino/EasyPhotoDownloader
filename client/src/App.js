@@ -1,7 +1,3 @@
-require('./index.css');
-require('./bootstrap/bootstrap.min.css');
-global.jQuery = require('jquery');
-require('bootstrap');
 const React = require('react');
 const UserPage = require('./UserPage');
 const LoginPage = require('./LoginPage');
