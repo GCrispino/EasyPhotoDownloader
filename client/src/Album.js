@@ -1,25 +1,28 @@
 const React = require('react');
 const Photo = require('./Photo');
-const FontAwesomeIcon = require('@fortawesome/react-fontawesome');
-const faArrowRight = require('@fortawesome/fontawesome-free-solid/faArrowRight');
-const faArrowDown = require('@fortawesome/fontawesome-free-solid/faArrowDown');
-
+const { Accordion,Icon } = require('semantic-ui-react');
 
 class Album extends React.Component{
     constructor(props){
         super(props);
 
         this.state = {
-            collapsed: false
+            collapsed: false,
+            active: false
         };
 
         this.toggleCollapse = this.toggleCollapse.bind(this);
+        this.toggleActive = this.toggleActive.bind(this);
     }
 
     toggleCollapse(){
         this.setState({
             collapsed: !this.state.collapsed
         });
+    }
+
+    toggleActive(){
+        this.setState({active: !this.state.active});
     }
 
     render(){
@@ -36,11 +39,12 @@ class Album extends React.Component{
                             handleChange={this.props.onPhotoChange} 
                         />
                     )
-            );
+            ),
+            {active} = this.state;
 
         return (
             <div className="album">
-                <a href={`#photoContainer${this.props.index}`} onClick={this.toggleCollapse} data-toggle="collapse">
+                {/* <a href={`#photoContainer${this.props.index}`} onClick={this.toggleCollapse} data-toggle="collapse">
                      {
 					 	this.state.collapsed ? 
 							 <FontAwesomeIcon icon={faArrowDown}/> 
@@ -55,7 +59,25 @@ class Album extends React.Component{
                         id={'album' + this.props.index} 
                     />
                 </label>
-                <div className="collapse photoContainer" id={`photoContainer${this.props.index}`}>{photos}</div>
+                <div className="collapse photoContainer" id={`photoContainer${this.props.index}`}>{photos}</div> */}
+
+
+                <Accordion fluid>
+                    <Accordion.Title active={active} index={0} onClick={this.toggleActive}>
+                        <Icon name='dropdown' />
+                        {this.props.name}
+                    </Accordion.Title>
+                    <input
+                        type="checkbox"
+                        onChange={this.props.onAlbumChange}
+                        id={'album' + this.props.index}
+                    />
+                    <Accordion.Content active={active}>
+                        <div className="collapse photoContainer" id={`photoContainer${this.props.index}`}>{photos}</div>
+                    </Accordion.Content>
+
+                   
+                </Accordion>
             </div>
         );
     }
