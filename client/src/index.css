@@ -13,6 +13,11 @@ p{
   font-weight: bold;
 }
 
+img{
+  max-width: 100%;
+  height: auto;
+}
+
 h1,.headText{
   text-align: center;
   margin-bottom: 1%;
@@ -90,7 +95,15 @@ h3{
 
 .album input{
   margin-left: 2rem;
+  margin-top: 1.05rem;
   float: right;
+}
+
+.album .title{
+  width: 70%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .albumLabel{

@@ -45,11 +45,15 @@ class UserPage extends React.Component{
 	}
 
 	createInitialState(){
-		const {userId,accessToken} = this.props;
+		const 
+			{userId,accessToken} = this.props,
+			fetchURL = 
+				window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+				? `http://localhost/getAlbums?userID=${userId}&access_token=${accessToken}`
+				: `https://easy-photo-downloader.herokuapp.com/getAlbums?userID=${userId}&access_token=${accessToken}`;
 
 		return new Promise((resolve,reject) => {
-			 fetch(`https://easy-photo-downloader.herokuapp.com/getAlbums?userID=${userId}&access_token=${accessToken}`)
-			// fetch(`http://localhost/getAlbums?userID=${userId}&access_token=${accessToken}`)
+			 fetch(fetchURL)
 			.then(response => response.json())
 			.then(albums => 
 				resolve(
