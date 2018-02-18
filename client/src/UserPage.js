@@ -24,7 +24,7 @@ class UserPage extends React.Component{
 		this.handleAlbumChange = this.handleAlbumChange.bind(this);
 		this.handlePhotoChange = this.handlePhotoChange.bind(this);
 		this.downloadImages = this.downloadImages.bind(this);
-		this.assignNewSelectedPhotosToPhotoArray = this.assignNewSelectedPhotosToPhotoArray.bind(this);
+		this.assignNewCheckedPhotosToArray = this.assignNewCheckedPhotosToArray.bind(this);
 	}
 
 	componentDidMount(){
@@ -40,8 +40,10 @@ class UserPage extends React.Component{
 		
 	}
 
-	assignNewSelectedPhotosToPhotoArray(photos,newSelectedPhotos){
-		return photos.map( (photo,i) => Object.assign(photo,{selected: newSelectedPhotos[i]}) );
+	assignNewCheckedPhotosToArray(photos,newCheckedPhotos){
+		return photos.map( (photo,i) => Object.assign(photo,{
+			checked: newCheckedPhotos[i]
+		}) );
 	}
 
 	createInitialState(){
@@ -59,12 +61,14 @@ class UserPage extends React.Component{
 				resolve(
 					albums.map(
 						(album,i) => {
-							const photos = album.photos.map(photo => Object.assign(photo,{selected: false}));
+							const photos = album.photos.map(photo => Object.assign(photo,{
+								checked: false
+							}));
 
 								return {
 									name: album.name,
 									index: i,
-									selected: false,
+									checked: false,
 									photos
 								};
 						}
@@ -75,75 +79,47 @@ class UserPage extends React.Component{
 		});
 	}
 
-	handleAlbumChange(e){
-		const albumInputElem = e.target;
-		const albumIndex = parseInt(albumInputElem.id.match(/(\d)+/g)[0],10);
-		const albumPhotosElems = albumInputElem.nextSibling.firstChild.childNodes;
-		const isAlbumChecked = albumInputElem.checked;
-		const userAlbums = this.state.userAlbums;
-		const {photos} = userAlbums[albumIndex];
-		
-
-		const newSelectedPhotos = Array.prototype.map.call(
-			albumPhotosElems,
-			albumPhotosElem => {
-				//checks input elements
-				albumPhotosElem.querySelector('input').checked = isAlbumChecked;
-				
-				return isAlbumChecked;
-			}
+	handleAlbumChange(e,albumIndex){
+		const {userAlbums} = this.state;
+		const { photos } = userAlbums[albumIndex];
+		const newUserAlbums = userAlbums.map(
+			(album, i) => albumIndex === i
+				? {
+					...album,
+					photos: photos.map(photos => ({...photos,checked: !album.checked})),
+					checked: !album.checked,
+				}
+				: album
 		);
 
-		const newPhotos = this.assignNewSelectedPhotosToPhotoArray(photos,newSelectedPhotos);
-
-		const newUserAlbums = userAlbums.map(
-									(album,i) => e.target.id === 'album' + i 
-										? {
-											name: album.name,
-											index: album.index,
-											selected: e.target.checked,
-											photos: newPhotos
-										} 
-										: album
-								);
-
-
-		this.setState({
-			userAlbums: newUserAlbums
-		});
-
+		this.setState({userAlbums: newUserAlbums});
 	}
 
 	handlePhotoChange(e){
 		const photoDivElem = e.target.parentNode;
 		const albumIndex = parseInt(photoDivElem.id.match(/(\d)*-/)[0].slice(0,-1),10);
 		const photoIndex = parseInt(photoDivElem.id.match(/-(\d)*/)[0].slice(1),10);
-
-		const albumInputElem = document.getElementById(`album${albumIndex}`);
 		
 		const curState = this.state;
 		const {photos} = curState.userAlbums[albumIndex];
-		const selectedPhotos = photos.map(photo => photo.selected);
-		const newSelectedPhotos = selectedPhotos.map(
+		const checkedPhotos = photos.map(photo => photo.checked);
+		const newCheckedPhotos = checkedPhotos.map(
 			//Logical XOR
-			(isPhotoSelected,i) => (i === photoIndex) !== isPhotoSelected
+			(isPhotoChecked,i) => (i === photoIndex) !== isPhotoChecked
 		);
 		
-		const newPhotos = this.assignNewSelectedPhotosToPhotoArray(photos,newSelectedPhotos);
+		const newPhotos = this.assignNewCheckedPhotosToArray(photos,newCheckedPhotos);
 		
 		const newUserAlbums = curState.userAlbums.map(
 			(userAlbum,i) => {
 				let newUserAlbum;
 				
 				if (i === albumIndex) {
-					const albumSelected = newSelectedPhotos.indexOf(true) !== -1;
-					//checks or unchecks album input element
-					albumInputElem.checked = albumSelected;
+					const albumChecked = newCheckedPhotos.indexOf(true) !== -1;
 					
 					newUserAlbum = {
-						name: userAlbum.name,
-						index: userAlbum.index,
-						selected: albumSelected,
+						...userAlbum,
+						checked: albumChecked,
 						photos: newPhotos
 					};
 				}
@@ -172,36 +148,35 @@ class UserPage extends React.Component{
 		});
 	}
 
-	//Filter photos selected by user to download
-	filterSelectedPhotos(userAlbums){
+	//Filter photos checked by user to download
+	filterCheckedPhotos(userAlbums){
 		return userAlbums
-		.filter(album => album.selected)//gets selected albums
-		.map(selectedAlbum => { 
+		.filter(album => album.checked)//gets checked albums
+		.map(checkedAlbum => { 
 			/*
-			 * maps selected albums in state to objects that contain the 
-			 * selected photos' urls
+			 * maps checked albums in state to objects that contain the 
+			 * checked photos' urls
 			 */
-			const newSelectedAlbum = {
-				name: selectedAlbum.name,
-				index: selectedAlbum.index,
-				selected: selectedAlbum.selected	
+			const newCheckedAlbum = {
+				name: checkedAlbum.name,
+				index: checkedAlbum.index,
+				checked: checkedAlbum.checked
 			};
 			
-			//fetch the selected photos from 'this.state.userAlbums'
-			newSelectedAlbum.photos = 
-				// selectedAlbum.selectedPhotos
-				selectedAlbum.photos
-				.map(photo => photo.selected)
-				.map((selectedPhoto,photoIndex) => {
-					if (selectedPhoto){
-						const photoObject = this.state.userAlbums[selectedAlbum.index].photos[photoIndex];
+			//fetch the checked photos from 'this.state.userAlbums'
+			newCheckedAlbum.photos = 
+				checkedAlbum.photos
+				.map(photo => photo.checked)
+				.map((checkedPhoto,photoIndex) => {
+					if (checkedPhoto){
+						const photoObject = this.state.userAlbums[checkedAlbum.index].photos[photoIndex];
 						return Object.assign(photoObject,{downloaded: false});
 					}
 					return null;
 				})
-				.filter(photo => photo ? photo.selected : null); //exclude undefineds
+				.filter(photo => photo ? photo.checked : null); //exclude undefineds
 
-			return newSelectedAlbum;
+			return newCheckedAlbum;
 		});
 
 	}
@@ -224,12 +199,12 @@ class UserPage extends React.Component{
 	//downloads images and saves them to user
 	downloadImages(){
 		const {userAlbums} = this.state;
-		const selectedPhotos = this.filterSelectedPhotos(userAlbums);
+		const checkedPhotos = this.filterCheckedPhotos(userAlbums);
 		const zip = new jszip();
 		const promises = [];
 		
 
-		if (selectedPhotos.length === 0){
+		if (checkedPhotos.length === 0){
 			this.setState({downloading: false});
 			return ;
 		}
@@ -237,12 +212,12 @@ class UserPage extends React.Component{
 		this.setState({
 			downloadInfo: {
 				downloading: true,
-				photosToDownload: selectedPhotos,
+				photosToDownload: checkedPhotos,
 				downloadingAlbumIndex: null,
 				downloadingPhotoIndex: null
 			}
 		},() => {
-			selectedPhotos.forEach((album,i) => {
+			checkedPhotos.forEach((album,i) => {
 				const folder = zip.folder(album.name);
 				
 				promises.push(
@@ -338,6 +313,7 @@ class UserPage extends React.Component{
 					index={i}
 					name={album.name}
 					photos={album.photos}
+					checked={album.checked}
 					onAlbumChange={this.handleAlbumChange}
 					onPhotoChange={this.handlePhotoChange}
 				/>

@@ -1,7 +1,6 @@
 const React = require('react');
 const {Button,Modal} = require('semantic-ui-react');
 
-//CHANGE IMAGE PREVIEW SIZE 
 class Photo extends React.Component{
 	constructor(props){
 		super(props);
@@ -46,7 +45,7 @@ class Photo extends React.Component{
 				<label>
 					{this.props.name ? this.props.name : '*Photo without title*'}
 				</label>
-				<input type="checkbox" />
+				<input type="checkbox" checked={this.props.checked}/>
 				<Button className='photoButton' onClick={this.test.bind(this)}>Preview</Button>
  
 				<Modal size='small' open={open} onClose={this.close}>

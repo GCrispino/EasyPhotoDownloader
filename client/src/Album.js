@@ -13,6 +13,7 @@ class Album extends React.Component{
 
         this.toggleCollapse = this.toggleCollapse.bind(this);
         this.toggleActive = this.toggleActive.bind(this);
+        this.handleChange = this.handleChange.bind(this);
     }
 
     toggleCollapse(){
@@ -23,6 +24,10 @@ class Album extends React.Component{
 
     toggleActive(){
         this.setState({active: !this.state.active});
+    }
+
+    handleChange(e){
+        this.props.onAlbumChange(e,this.props.index);
     }
 
     render(){
@@ -36,7 +41,8 @@ class Album extends React.Component{
                             id={`photo${this.props.index}-${i}`} 
                             name={photo.name}
                             images={photo.images}
-                            handleChange={this.props.onPhotoChange} 
+                            checked={photo.checked}
+                            handleChange={this.props.onPhotoChange}
                         />
                     )
             ),
@@ -44,24 +50,6 @@ class Album extends React.Component{
 
         return (
             <div className="album">
-                {/* <a href={`#photoContainer${this.props.index}`} onClick={this.toggleCollapse} data-toggle="collapse">
-                     {
-					 	this.state.collapsed ? 
-							 <FontAwesomeIcon icon={faArrowDown}/> 
-							: <FontAwesomeIcon icon={faArrowRight}/>
-					}
-                </a>
-                <label className="albumLabel" >
-                    {this.props.name}
-                    <input 
-                        type="checkbox" 
-                        onChange={this.props.onAlbumChange} 
-                        id={'album' + this.props.index} 
-                    />
-                </label>
-                <div className="collapse photoContainer" id={`photoContainer${this.props.index}`}>{photos}</div> */}
-
-
                 <Accordion fluid>
                     <Accordion.Title active={active} index={0} onClick={this.toggleActive}>
                         <Icon name='dropdown' />
@@ -69,7 +57,8 @@ class Album extends React.Component{
                     </Accordion.Title>
                     <input
                         type="checkbox"
-                        onChange={this.props.onAlbumChange}
+                        checked={this.props.checked}
+                        onChange={this.handleChange}
                         id={'album' + this.props.index}
                     />
                     <Accordion.Content active={active}>
