@@ -25,7 +25,7 @@ h1,.headText{
 
 h3{
   text-align: center;  
-  margin-bottom: 2%;
+  /* margin-bottom: 2%; */
 }
 
 .photoContainer{
@@ -171,6 +171,20 @@ h3{
 
 .accordion .title{
   display: inline-block;
+}
+
+.downloadStatus{
+  text-align:center;
+}
+
+.downloadStatus h3{
+  margin-top: 5%;
+  font-weight: normal;
+}
+
+.downloadStatus h4{
+  margin-top: 0;
+  font-weight: normal;
 }
 
 #root{

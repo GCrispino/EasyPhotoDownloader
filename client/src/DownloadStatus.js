@@ -19,10 +19,10 @@ class DownloadStatus extends React.Component{
 
 		const downloadedPhotos = this.getDownloadedPhotos();
 			return (
-				<div>
+				<div className="downloadStatus">
 					<Loader /> 
-					Downloading...(please wait)
-					<div>{downloadedPhotos.length} / {nAllPhotos} photos</div>
+					<h3>Downloading...(please wait)</h3>
+					<h4>{downloadedPhotos.length} / {nAllPhotos} photos</h4>
 				</div>
 			);
 		}
