@@ -53,7 +53,7 @@ class UserPage extends React.Component{
 				: `https://easy-photo-downloader.herokuapp.com/getAlbums?userID=${userId}&access_token=${accessToken}`;
 
 		return new Promise((resolve,reject) => {
-			 fetch(fetchURL)
+			fetch(fetchURL)
 			.then(response => response.json())
 			.then(albums => 
 				resolve(
