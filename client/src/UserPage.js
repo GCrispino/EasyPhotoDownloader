@@ -1,9 +1,10 @@
 const React = require('react');
-const Album = require('./Album');
 const DownloadStatus = require('./DownloadStatus');
 const jszip = require('jszip');
 const Loader = require('react-loader');
 const { Button } = require('semantic-ui-react');
+const Album = require('./Album');
+const DriveButton = require('./DriveButton');
 
 class UserPage extends React.Component{
 	constructor(props){
@@ -15,6 +16,7 @@ class UserPage extends React.Component{
 			loaded: false,
 			downloadInfo: {
 				downloading: false,
+				downloaded: false,
 				photosToDownload: null,
 				downloadingAlbumIndex: null,
 				downloadingPhotoIndex: null
@@ -24,6 +26,7 @@ class UserPage extends React.Component{
 		this.handleAlbumChange = this.handleAlbumChange.bind(this);
 		this.handlePhotoChange = this.handlePhotoChange.bind(this);
 		this.downloadImages = this.downloadImages.bind(this);
+		this.downloadImagesAndSaveZipFile = this.downloadImagesAndSaveZipFile.bind(this);
 		this.assignNewCheckedPhotosToArray = this.assignNewCheckedPhotosToArray.bind(this);
 	}
 
@@ -37,7 +40,6 @@ class UserPage extends React.Component{
 				});
 		})
 		.catch(console.error);
-		
 	}
 
 	assignNewCheckedPhotosToArray(photos,newCheckedPhotos){
@@ -136,14 +138,14 @@ class UserPage extends React.Component{
 
 	}
 
-	fetchPhotoToZipFolder(photo,folder){
+	fetchPhoto(photo){
 		return new Promise((resolve,reject) => {
 			fetch(photo.images[0].source)
 			.then(response => response.blob())
-			.then(blob => {
-				folder.file(`${photo.id}.jpg`,blob);
-				resolve();
-			})
+			.then(blob => resolve({
+				name: `${photo.id}.jpg`,
+				blob
+			}))
 			.catch(reject);
 		});
 	}
@@ -202,76 +204,97 @@ class UserPage extends React.Component{
 		const checkedPhotos = this.filterCheckedPhotos(userAlbums);
 		const zip = new jszip();
 		const promises = [];
-		
 
 		if (checkedPhotos.length === 0){
-			this.setState({downloading: false});
+			this.setState({
+				downloadInfo: {
+					downloading: true,
+					downloaded: false,
+					photosToDownload: checkedPhotos,
+					downloadingAlbumIndex: null,
+					downloadingPhotoIndex: null
+				}});
 			return ;
 		}
 
-		this.setState({
-			downloadInfo: {
-				downloading: true,
-				photosToDownload: checkedPhotos,
-				downloadingAlbumIndex: null,
-				downloadingPhotoIndex: null
-			}
-		},() => {
-			checkedPhotos.forEach((album,i) => {
-				const folder = zip.folder(album.name);
-				
-				promises.push(
-	
-					Promise.all(album.photos.map((photo,j) => 
+		return new Promise(resolve => {
+			this.setState({
+				downloadInfo: {
+					downloading: true,
+					downloaded: false,
+					photosToDownload: checkedPhotos,
+					downloadingAlbumIndex: null,
+					downloadingPhotoIndex: null
+				}
+			},() => {
+				checkedPhotos.forEach((album,i) => {
+					// const folder = zip.folder(album.name);
+					
+					promises.push(
 						new Promise((resolve,reject) => {
-
-							this.fetchPhotoToZipFolder(photo,folder)
-							.then(() => {
-								const newPhotosToDownload = this.markPhotoAsDownloaded(j,i,this.state.downloadInfo.photosToDownload);
-								const newDownloadInfo = Object.assign(this.state.downloadInfo,{photosToDownload: newPhotosToDownload});
-								this.setState({downloadInfo: newDownloadInfo});
-								resolve();
+							Promise.all(album.photos.map((photo,j) => 
+								new Promise((resolve,reject) => {
+									// this.fetchPhotoToZipFolder(photo,folder)
+									this.fetchPhoto(photo)
+									.then(photoData => {
+										const newPhotosToDownload = this.markPhotoAsDownloaded(j,i,this.state.downloadInfo.photosToDownload);
+										const newDownloadInfo = Object.assign(this.state.downloadInfo,{photosToDownload: newPhotosToDownload});
+										this.setState({downloadInfo: newDownloadInfo});
+										resolve(photoData);
+									})
+									.catch(reject);
+								})
+							))
+							.then(albumPhotosData => {
+								resolve({
+									name: album.name,
+									photos: albumPhotosData
+								});
 							})
 							.catch(reject);
 						})
-					))
-	
-				);
-			});
-			
-			Promise.all(promises)
-			.then(() => {
-				zip.generateAsync({type:'blob'})
-				.then( content => {
-					const aElement = document.createElement('a');
-					const objectURL = URL.createObjectURL(content);
-				
-					aElement.style.display = 'none';
-					aElement.href = objectURL;
-					aElement.download = 'photos.zip';
-	
-					document.body.appendChild(aElement);
-	
-					aElement.click();
-					this.setState({
-						userAlbums: this.initialUserAlbums,
-						downloadInfo: {
-							downloading: false,
-							photosToDownload: this.state.photosToDownload
-						}
-					});
-			
-				})
-				.catch(err => {
-					this.setState({
-						userAlbums: this.initialUserAlbums,
-						downloadInfo: {
-							downloading: false,
-							photosToDownload: this.state.photosToDownload
-						}
-					});
-					console.error(err);
+					);
 				});
+				
+				resolve(Promise.all(promises));
+
+			});			
+		});
+		
+	}
+
+	downloadImagesAndSaveZipFile(){
+		this.downloadImages()
+		.then(albumsInfo => {
+			const zip = new jszip();
+
+			albumsInfo.forEach(albumInfo => {
+				const folder = zip.folder(albumInfo.name);
+
+				albumInfo.photos.forEach(photoData => folder.file(photoData.name,photoData.blob));
+			});
+
+			zip.generateAsync({type:'blob'})
+			.then( content => {
+				const aElement = document.createElement('a');
+				const objectURL = URL.createObjectURL(content);
+
+				aElement.style.display = 'none';
+				aElement.href = objectURL;
+				aElement.download = 'photos.zip';
+
+				document.body.appendChild(aElement);
+
+				aElement.click();
+				this.setState({
+					userAlbums: this.initialUserAlbums,
+					downloadInfo: {
+						downloading: false,
+						downloaded: true,
+						photosToDownload: this.state.photosToDownload
+					}
+				});
+
 			})
 			.catch(err => {
 				this.setState({
@@ -283,9 +306,17 @@ class UserPage extends React.Component{
 				});
 				console.error(err);
 			});
-			
+		})
+		.catch(err => {
+			this.setState({
+				userAlbums: this.initialUserAlbums,
+				downloadInfo: {
+					downloading: false,
+					photosToDownload: this.state.photosToDownload
+				}
+			});
+			console.error(err);
 		});
-		
 	}
 
 	getDownloadedPhotos(){
@@ -325,9 +356,10 @@ class UserPage extends React.Component{
 				this.state.loaded ?
 				<div>
 						<form id="albumList">{albums}</form>
-					<Button onClick={this.downloadImages} className='downloadButton'>
+					<Button onClick={this.downloadImagesAndSaveZipFile} className='downloadButton'>
 						Download Photos!
 					</Button>
+					{/* <DriveButton contentToUpload={this.downloadImages}/> */}
 					</div>
 				: <div>
 						<Loader />
