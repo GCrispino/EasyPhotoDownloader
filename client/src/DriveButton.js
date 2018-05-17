@@ -11,7 +11,6 @@ class DriveButton extends React.Component {
 		/**
 		 * API vars
 		 */
-		// this.CLIENT_ID = '901501021165-miaastoqf2med8uh87ekqfe1dka0ucql.apps.googleusercontent.com';
 		this.CLIENT_ID = '901501021165-u55km00bs3m29v0lf8g4knccj4oacmik.apps.googleusercontent.com';
 		this.API_KEY = 'AIzaSyDVpcXLh35yrymzXOzfZdCMsRdUsacUYxA';
 		// Array of API discovery doc URLs for APIs used by the quickstart
@@ -27,6 +26,7 @@ class DriveButton extends React.Component {
 		};
 	}
 	
+
 	componentWillMount(){
 		const script = document.createElement('script');
 
@@ -36,9 +36,52 @@ class DriveButton extends React.Component {
 		document.body.appendChild(script);
 	}
 
-	createFile = (content) => {
-		console.log('Create file!!!')
-		console.log('content: ',content);
+	createFile = (fileData) => {
+
+		console.log('createFile!!! -> ',fileData);
+		const boundary = '-------314159265358979323846';
+		const delimiter = "\r\n--" + boundary + "\r\n";
+		const close_delim = "\r\n--" + boundary + "--";
+		const title = 'photos.zip';
+		const {gapi} = this.state;
+
+		var reader = new FileReader();
+		reader.readAsBinaryString(fileData);
+
+		return new Promise(resolve => {
+			reader.onload = function (e) {
+				var contentType = fileData.type || 'application/octet-stream';
+				var metadata = {
+					title,
+					'mimeType': contentType
+				};
+	
+				var base64Data = btoa(reader.result);
+				var multipartRequestBody =
+					delimiter +
+					'Content-Type: application/json\r\n\r\n' +
+					JSON.stringify(metadata) +
+					delimiter +
+					'Content-Type: ' + contentType + '\r\n' +
+					'Content-Transfer-Encoding: base64\r\n' +
+					'\r\n' +
+					base64Data +
+					close_delim;
+	
+				var request = gapi.client.request({
+					'path': '/upload/drive/v2/files',
+					'method': 'POST',
+					'params': { 'uploadType': 'multipart' },
+					'headers': {
+						'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'
+					},
+					'body': multipartRequestBody
+				});
+				
+				request.execute(resolve);
+			}
+		});
+
 	}
 
 	/**
@@ -65,10 +108,6 @@ class DriveButton extends React.Component {
 			scope: self.SCOPES
 		}).then(function () {
 			// Listen for sign-in state changes.
-			// gapi.auth2.getAuthInstance().isSignedIn.listen( isSignedIn => {
-			// 	console.log('mudou! -> ',isSignedIn);
-			// 	self.setState({signedIn: isSignedIn});
-			// });
 			gapi.auth2.getAuthInstance().isSignedIn.listen(this.handleSigninStatusChange);
 
 			// Handle the initial sign-in state.
@@ -81,25 +120,42 @@ class DriveButton extends React.Component {
 	}
 
 	handleSigninStatusChange = (isSignedIn) => {
-		const {content} = this.state;
+		const 
+			{createFile} = this,
+			{content} = this.state,
+			setState = this.setState.bind(this);
 
-		if (!content)
+		if (!content) 
 			return;
 
-		this.createFile(content); //draft for now
+		setState({ uploading: true },() => {
+			createFile(content)
+			.then(() => setState({uploading: false}));
+		});
 	}
 
 	handleClick = () => {
 
 		const 
-			{contentToUpload} = this.props,
-			{createFile} = this;
+			{contentToUpload, onFinishUpload} = this.props,
+			{createFile} = this,
+			{uploading} = this.state,
+			setState = this.setState.bind(this);
 
+		setState({downloading: true});
 		contentToUpload()
 		.then(content => {
+			setState({ downloading: false });
+			
 			const authInstance = this.state.gapi.auth2.getAuthInstance();
 			if (authInstance.isSignedIn)
-				createFile(content);
+				setState({ uploading: true }, () => {
+					createFile(content)
+					.then(() => setState(
+						{ uploading: false ,content},
+						onFinishUpload
+					));
+				});
 			else
 				authInstance.signIn();
 		});
@@ -107,8 +163,16 @@ class DriveButton extends React.Component {
 	}
 
 	render() {
+		const 
+			{downloading,uploading} = this.state,
+			{displayWhenDownloading,hidden,disabled} = this.props,
+			display = hidden ? 'none'
+					: downloading ? 
+						!displayWhenDownloading ? 'none' : this.props.display 
+					: this.props.display;
+
 		return (
-			<Button onClick={this.handleClick}>
+			<Button fluid className={this.props.className} style={{display}} disabled={disabled} loading={uploading} onClick={this.handleClick}>
 				Save to Google Drive
 			</Button>
 		);

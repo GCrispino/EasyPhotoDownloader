@@ -149,8 +149,11 @@ h3{
   transform: rotate(90deg);
 }
 
+.button{
+  transition: .5s background; 
+}
+
 .button.downloadButton{
-  transition: .5s background;  
   display: block;
   margin: auto;
   margin-top: 1.5rem;
@@ -167,6 +170,28 @@ h3{
 }
 .button.downloadButton:visited{
   background: rgb(38, 177, 176);
+}
+
+.button.saveToDriveButton{
+  font-size: 1.2rem;  
+  text-align: center;
+  display: block;
+  margin: auto;
+  margin-top: .5em;
+  background: rgb(61, 230, 100);  
+}
+
+.button.saveToDriveButton:hover{
+  background: rgb(53,191,85); 
+}
+
+
+.button.saveToDriveButton:active{
+  background: rgb(53,191,85);
+}
+
+.button.saveToDriveButton:visited{
+  background: rgb(53,191,85);
 }
 
 .accordion .title{

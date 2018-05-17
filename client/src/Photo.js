@@ -12,7 +12,7 @@ class Photo extends React.Component{
 		this.close = this.close.bind(this);
 	}
 
-	test(e){
+	open(e){
 		e.preventDefault();
 		this.setState({ open: true });		
 	}
@@ -46,7 +46,7 @@ class Photo extends React.Component{
 					{this.props.name ? this.props.name : '*Photo without title*'}
 				</label>
 				<input type="checkbox" checked={this.props.checked}/>
-				<Button className='photoButton' onClick={this.test.bind(this)}>Preview</Button>
+				<Button className='photoButton' onClick={this.open.bind(this)}>Preview</Button>
  
 				<Modal size='small' open={open} onClose={this.close}>
 					<Modal.Header>

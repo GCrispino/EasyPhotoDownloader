@@ -85,13 +85,15 @@ class App extends React.Component{
 	}
 
 	render(){
+		
 		const {userId,accessToken} = this.state;
 		const componentToRender = 
-			this.state.sdkLoaded ?
-				this.state.loggedIn 
+			this.state.sdkLoaded ? 
+				this.state.loggedIn
 				? <UserPage userId={userId} accessToken={accessToken} />
 				: <LoginPage handleLogin={this.handleLogin.bind(this)}/>
 			: <div>Loading FB info...</div>;
+			
 		return componentToRender;
 	}
 }

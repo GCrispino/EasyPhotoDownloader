@@ -2,9 +2,10 @@ const React = require('react');
 const DownloadStatus = require('./DownloadStatus');
 const jszip = require('jszip');
 const Loader = require('react-loader');
-const { Button } = require('semantic-ui-react');
+const { Button, Modal } = require('semantic-ui-react');
 const Album = require('./Album');
 const DriveButton = require('./DriveButton');
+
 
 class UserPage extends React.Component{
 	constructor(props){
@@ -14,9 +15,10 @@ class UserPage extends React.Component{
 
 		this.state = ({
 			loaded: false,
+			openModal: false,
 			downloadInfo: {
 				downloading: false,
-				downloaded: false,
+				downloadedContentBlob: null,
 				photosToDownload: null,
 				downloadingAlbumIndex: null,
 				downloadingPhotoIndex: null
@@ -84,7 +86,7 @@ class UserPage extends React.Component{
 	}
 
 	handleAlbumChange(e,albumIndex){
-		const {userAlbums} = this.state;
+		const {userAlbums,downloadInfo} = this.state;
 		const { photos } = userAlbums[albumIndex];
 		const newUserAlbums = userAlbums.map(
 			(album, i) => albumIndex === i
@@ -95,8 +97,15 @@ class UserPage extends React.Component{
 				}
 				: album
 		);
+		const newDownloadInfo = {
+			...downloadInfo,
+			downloadedContentBlob: null
+		}
 
-		this.setState({userAlbums: newUserAlbums});
+		this.setState({
+			userAlbums: newUserAlbums,
+			downloadInfo: newDownloadInfo
+		});
 	}
 
 	handlePhotoChange(e){
@@ -134,8 +143,15 @@ class UserPage extends React.Component{
 			}
 		);
 
+		const {downloadInfo} = this.state;
+		const newDownloadInfo = {
+			...downloadInfo,
+			downloadedContentBlob: null
+		}
+
 		this.setState({
-			userAlbums: newUserAlbums
+			userAlbums: newUserAlbums,
+			downloadInfo: newDownloadInfo
 		});
 
 	}
@@ -205,9 +221,9 @@ class UserPage extends React.Component{
 		const {userAlbums} = this.state;
 		const checkedPhotos = this.filterCheckedPhotos(userAlbums);
 		const promises = [];
+		const {downloadInfo} = this.state;
 
 		if (checkedPhotos.length === 0){
-			const {downloadInfo} = this.state
 			this.setState({
 				downloadInfo: {
 					...downloadInfo,
@@ -220,16 +236,12 @@ class UserPage extends React.Component{
 		return new Promise(resolve => {
 			this.setState({
 				downloadInfo: {
+					...downloadInfo,
 					downloading: true,
-					downloaded: false,
-					photosToDownload: checkedPhotos,
-					downloadingAlbumIndex: null,
-					downloadingPhotoIndex: null
+					photosToDownload: checkedPhotos
 				}
 			},() => {
 				checkedPhotos.forEach((album,i) => {
-					// const folder = zip.folder(album.name);
-					
 					promises.push(
 						new Promise((resolve,reject) => {
 							Promise.all(album.photos.map((photo,j) => 
@@ -272,26 +284,40 @@ class UserPage extends React.Component{
 			albumInfo.photos.forEach(photoData => folder.file(photoData.name, photoData.blob));
 		});
 		
-		this.setState({
-			userAlbums: this.initialUserAlbums,
-			downloadInfo: {
-				downloading: false,
-				downloaded: true,
-				photosToDownload: this.state.photosToDownload
-			}
+		const {downloadInfo} = this.state;
+		return zip.generateAsync({ type: 'blob' })
+		.then(content => {
+			this.setState({
+				downloadInfo: {
+					downloading: false,
+					downloadedContentBlob: content,
+					photosToDownload: this.state.photosToDownload
+				}
+			});
+
+			return Promise.resolve(content);
 		});
-		return zip.generateAsync({ type: 'blob' });
 	}
 
 	downloadImagesAndGetZipFile = () => 
 		this.downloadImages()
-		.then(this.getZipFile);
-
+		.then(this.getZipFile)
+		.catch(console.error)
+		
 
 	downloadImagesAndSaveZipFile(){
 		this.downloadImages()
 		.then(this.getZipFile)
 		.then( content => {
+
+			this.setState({
+				downloadInfo: {
+					downloading: false,
+					downloadedContentBlob: content,
+					photosToDownload: this.state.photosToDownload
+				}
+			});
+
 			const aElement = document.createElement('a');
 			const objectURL = URL.createObjectURL(content);
 
@@ -306,7 +332,6 @@ class UserPage extends React.Component{
 		})
 		.catch(err => {
 			this.setState({
-				userAlbums: this.initialUserAlbums,
 				downloadInfo: {
 					downloading: false,
 					photosToDownload: this.state.photosToDownload
@@ -325,43 +350,78 @@ class UserPage extends React.Component{
 		.filter(photo => photo.downloaded);
 	}
 
-	render(){
-		const {downloadInfo} = this.state;
-		if (downloadInfo.downloading){
-			return <DownloadStatus 
-						photosToDownload={downloadInfo.photosToDownload}
-					/>;
-		}
+	closeModal = () => this.setState({openModal: false});
 
+	render(){
+		
 		const albums = this.state.loaded ? (this.state.userAlbums.map(
 			(album,i) => (
-			
+				
 				<Album 
-					key={i}
-					index={i}
-					name={album.name}
-					photos={album.photos}
-					checked={album.checked}
-					onAlbumChange={this.handleAlbumChange}
-					onPhotoChange={this.handlePhotoChange}
+				key={i}
+				index={i}
+				name={album.name}
+				photos={album.photos}
+				checked={album.checked}
+				onAlbumChange={this.handleAlbumChange}
+				onPhotoChange={this.handlePhotoChange}
 				/>
-			
+				
 			))
 		) : null;
+		
+		const 
+			{downloadInfo,openModal} = this.state,
+			{downloadedContentBlob} = downloadInfo;
+			
 
         return (
-				this.state.loaded ?
+			<div>
+				{this.state.loaded ?
 				<div>
-						<form id="albumList">{albums}</form>
-					<Button onClick={this.downloadImagesAndSaveZipFile} className='downloadButton'>
-						Download Photos!
-					</Button>
-					<DriveButton contentToUpload={this.downloadImagesAndGetZipFile}/>
-					</div>
+					{
+						downloadInfo.downloading ?
+							<DownloadStatus
+								photosToDownload={downloadInfo.photosToDownload}
+							/> 
+							: <React.Fragment>
+								<form id="albumList">{albums}</form>
+								<Button fluid onClick={this.downloadImagesAndSaveZipFile} className='downloadButton'>
+									Download Photos!
+								</Button>
+							</React.Fragment>
+					}
+
+
+					<DriveButton
+						hidden={downloadInfo.downloading}
+						disabled={this.state.userAlbums && this.filterCheckedPhotos(this.state.userAlbums).length === 0}
+						className='saveToDriveButton'
+						displayWhenDownloading={false}
+						display='block'
+						contentToUpload={
+							downloadedContentBlob ?
+								() => Promise.resolve(downloadedContentBlob)
+								: this.downloadImagesAndGetZipFile
+						}
+						onFinishUpload={() => this.setState({openModal: true})}
+					/>
+				</div>
 				: <div>
 						<Loader />
 						<div style={{ textAlign: 'center' }}>Loading...</div>
 					</div>
+				}
+
+				<Modal size='small' open={openModal} onClose={this.closeModal}>
+					<Modal.Header>
+						Photos uploaded to Google Drive!
+					</Modal.Header>
+					<Modal.Actions>
+						<Button negative icon='remove' labelPosition='right' content='Close' onClick={this.closeModal} />
+					</Modal.Actions>
+				</Modal>
+			</div>
 		);
 	}
 }
