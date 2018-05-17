@@ -393,7 +393,7 @@ class UserPage extends React.Component{
 					}
 
 
-					<DriveButton
+					{/* <DriveButton
 						hidden={downloadInfo.downloading}
 						disabled={this.state.userAlbums && this.filterCheckedPhotos(this.state.userAlbums).length === 0}
 						className='saveToDriveButton'
@@ -405,7 +405,7 @@ class UserPage extends React.Component{
 								: this.downloadImagesAndGetZipFile
 						}
 						onFinishUpload={() => this.setState({openModal: true})}
-					/>
+					/> */}
 				</div>
 				: <div>
 						<Loader />
