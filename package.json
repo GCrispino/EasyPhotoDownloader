@@ -10,8 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "archiver": "^2.0.3",
-    "bootstrap": "^3.3.7",
-    "express": "^4.15.4"
+    "bootstrap": "^3.4.1",
+    "express": "^4.17.1"
   },
   "devDependencies": {
     "eslint-plugin-react": "^7.4.0"
