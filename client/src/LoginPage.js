@@ -1,31 +1,26 @@
-const 
-	React = require('react'),
-	{Button, Icon} = require('semantic-ui-react');
+import React from "react";
+import { Button, Icon } from "semantic-ui-react";
 
+class LoginPage extends React.Component {
+  constructor(props) {
+    super(props);
 
-class LoginPage extends React.Component{
+    this.state = { rotate: false };
+  }
 
-	constructor(props) {
-		super(props);
-		
-		this.state = {rotate: false};
-	}
-	
+  handleClick() {
+    this.setState({ rotate: !this.state.rotate });
+  }
 
-	handleClick() {
-		this.setState({rotate: !this.state.rotate});
-	}
-
-	render(){
-
-		return (
-			<div id="loginPage">
-				<Button color='facebook' onClick={this.props.handleLogin}>
-					<Icon name='facebook' /> Continue with Facebook
-				</Button>
-			</div>
-		);
-	}
+  render() {
+    return (
+      <div id="loginPage">
+        <Button color="facebook" onClick={this.props.handleLogin}>
+          <Icon name="facebook" /> Continue with Facebook
+        </Button>
+      </div>
+    );
+  }
 }
 
-module.exports = LoginPage;
+export default LoginPage;

@@ -1,6 +1,6 @@
-const React = require("react");
-const UserPage = require("./UserPage");
-const LoginPage = require("./LoginPage");
+import React from "react";
+import UserPage from "./UserPage";
+import LoginPage from "./LoginPage";
 
 class App extends React.Component {
   constructor(props) {
