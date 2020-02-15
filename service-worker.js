@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/EasyPhotoDownloader/precache-manifest.a460cf4b023f957a8a5706da956ed766.js"
+  "/EasyPhotoDownloader/precache-manifest.2a87f019baf6b0ec05498e8f4dfdf87d.js"
 );
 
 self.addEventListener('message', (event) => {
