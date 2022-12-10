@@ -11,7 +11,7 @@
   "dependencies": {
     "archiver": "^2.0.3",
     "bootstrap": "^3.4.1",
-    "express": "^4.17.1"
+    "express": "^4.17.3"
   },
   "devDependencies": {
     "eslint-plugin-react": "^7.4.0"
